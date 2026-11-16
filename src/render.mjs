@@ -126,7 +126,7 @@ function styleBlock(used, extra = '') {
     seen.add(kf);
     css += `@keyframes bri-${kf}{${A[0]}}`;
   }
-  return `<style>${css}${extra}@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style>`;
+  return `<style>${css}${extra}@media (prefers-reduced-motion:reduce){[style*=\"animation:bri-\"]{animation:none!important}}</style>`;
 }
 
 
