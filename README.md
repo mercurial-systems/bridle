@@ -65,6 +65,8 @@ import { svg } from 'bridle-icons';
 el.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });
 ```
 
+Animated solid paints its cut-outs with the CSS variable `--bri-knockout` (default `#fff`): set it to your background.
+
 Options: `variant` (`line` `solid` `color` `iso`), `animated`, `size`, `strokeWidth`, `title`, and `palette`:
 a preset (`spectrum` `sunset` `ocean` `mint` `grape` `lava` `gold` `ice`), a hue `0–360`, a `[hue, accentHue]` pair or a full palette object.
 

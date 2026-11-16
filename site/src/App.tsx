@@ -67,7 +67,8 @@ function LiveSvg({ icon, look, size, className, hover }: { icon: Icon; look: Par
     return (
       <span ref={ref} style={{ width: size, height: size }} className={cn('relative inline-block leading-[0]', !visible && 'paused', className)}>
         {seen && <span className="absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: false }, size, 'base') }} />}
-        {seen && <span className="iso-float absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: true }, size, 'glyph') }} />}
+        {/* parts animate on hover only: dozens of tiles repainting their extruded glyphs every frame is what drops frames */}
+        {seen && <span className="iso-float absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: !!hover }, size, 'glyph') }} />}
       </span>
     );
   }
@@ -130,7 +131,7 @@ function HeroMock() {
             <ul className="border-t pt-2">
               {MOCK.map(([n, l], i) => (
                 <li key={n}>
-                  <button onMouseEnter={() => setActive(i)} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-sm', i === active ? 'bg-tile font-medium' : 'text-ink/75')}>
+                  <button onMouseEnter={() => setActive(i)} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-sm', i === active ? 'bg-tile font-medium [--bri-knockout:#f4f4f1]' : 'text-ink/75')}>
                     <span className="text-ink"><LiveSvg icon={byName[n]} look={{ variant }} hover={i === active} size={20} /></span>
                     {l}
                     {i === 2 && <span className="ml-auto rounded-md bg-lime px-1.5 text-[10px] font-semibold">NEW</span>}
@@ -162,7 +163,7 @@ function StyleCard({ c }: { c: (typeof STYLE_CARDS)[number] }) {
   const [hover, setHover] = useState(false);
   const iso = c.variant === 'iso';
   return (
-    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} className="rounded-2xl p-6 text-center" style={{ background: c.bg }}>
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} className="rounded-2xl p-6 text-center" style={{ background: c.bg, ['--bri-knockout' as string]: c.bg }}>
       <div className={cn('mx-auto grid w-fit grid-cols-3 text-ink', iso ? 'gap-0' : 'gap-5')}>
         {CARD_ICONS.map((n) => <LiveSvg key={n} icon={byName[n]} look={{ variant: c.variant }} hover={hover} size={iso ? 64 : 30} />)}
       </div>
@@ -353,7 +354,7 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
           </div>
           <button onClick={onClose} className="rounded-lg border p-2 text-ink/60 hover:bg-tile" aria-label="Close"><X className="size-4" /></button>
         </div>
-        <div className="dots mt-6 flex h-72 items-center justify-center rounded-2xl border bg-band text-ink">
+        <div className="dots mt-6 flex h-72 items-center justify-center rounded-2xl border bg-band text-ink [--bri-knockout:#f7f8f5]">
           <Svg icon={icon} look={{ ...look, animated: true }} size={look.variant === 'iso' ? 240 : 140} />
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2">
@@ -432,7 +433,18 @@ function Footer() {
 
 export default function App() {
   const [path, go] = usePath();
-  const [look, setLook] = useState<Look>({ variant: 'line', animated: false, palette: 'spectrum', strokeWidth: 1.5 });
+  const [look, setLook] = useState<Look>(() => {
+    const p = new URLSearchParams(location.search);
+    const v = p.get('s') as Variant | null;
+    return { variant: v && ['line', 'solid', 'color', 'iso'].includes(v) ? v : 'line', animated: p.get('m') === '1', palette: 'spectrum', strokeWidth: 1.5 };
+  });
+  useEffect(() => {
+    if (!location.pathname.startsWith('/icons')) return;
+    const u = new URL(location.href);
+    if (look.variant === 'line') u.searchParams.delete('s'); else u.searchParams.set('s', look.variant);
+    if (look.animated) u.searchParams.set('m', '1'); else u.searchParams.delete('m');
+    history.replaceState(null, '', u);
+  }, [look.variant, look.animated]);
   const [open, setOpen] = useState<Icon | null>(() => byName[new URLSearchParams(location.search).get('icon') || ''] || null);
   useEffect(() => {
     const u = new URL(location.href);

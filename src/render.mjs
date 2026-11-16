@@ -224,7 +224,8 @@ export function renderSvg(icon, opt = {}) {
     const units = icon.els, boxes = units.map(box);
     let body = '', defs = '';
     units.forEach((u, i) => {
-      const cut = units.map((v, j) => j).filter((j) => j > i && hasShape(units[j]) && meets(boxes[i], boxes[j]) && !inside(boxes[j], boxes[i]) && !inside(boxes[i], boxes[j]));
+      // Animated renders skip the knock-out masks: anything moving under a mask is recomposited every frame.
+      const cut = ctx.anim ? [] : units.map((v, j) => j).filter((j) => j > i && hasShape(units[j]) && meets(boxes[i], boxes[j]) && !inside(boxes[j], boxes[i]) && !inside(boxes[i], boxes[j]));
       const inner = draw([u], paint, ctx);
       if (!cut.length || !inner) { body += inner; return; }
       const id = `${uid}k${i}`;
@@ -234,6 +235,21 @@ export function renderSvg(icon, opt = {}) {
       body += `<g mask="url(#${id})">${inner}</g>`;
     });
     if (defs) body = `<defs>${defs}</defs>` + body;
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
+  }
+
+  if (variant === 'solid' && ctx.anim) {
+    // Mask-free motion: cut-outs are painted in a knockout colour (CSS var --bri-knockout, default white) so nothing
+    // animates inside a <mask>. Static solid keeps true transparent cut-outs.
+    const ko = 'var(--bri-knockout, #fff)';
+    const ob = onBody(icon);
+    const body = draw(icon.els, (r, e) => {
+      if (r === 'b') return { fill: 'currentColor', stroke: 'currentColor' };
+      if (r === 'a') return { fill: 'currentColor', stroke: ko };
+      if (r === 'd' || r === 'A') return { fill: 'none', stroke: ob.get(e) || r === 'A' ? ko : 'currentColor' };
+      if (r === 'f') return { fill: ob.get(e) ? ko : 'currentColor', stroke: 'none' };
+      return null;
+    }, ctx);
     return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
   }
 
