@@ -54,6 +54,8 @@ export function paletteFromHue(h, ah = h + 150) {
 }
 export const CATEGORY_HUES = {
   saas: [262, 322], business: [22, 200], corporate: [186, 10], finance: [152, 44], banking: [222, 42], cards: [332, 268], crypto: [268, 178],
+  interface: [240, 330], communication: [200, 28], devices: [212, 160], commerce: [12, 190], markets: [168, 38], defi: [288, 172], people: [32, 250], data: [196, 280], chain: [250, 160], trading: [275, 135],
+  marketing: [300, 40], ai: [258, 190], travel: [196, 24], property: [30, 205], legal: [225, 45], support: [170, 330], payments: [145, 265], wealth: [46, 215], gaming: [310, 165], esg: [130, 48], productivity: [218, 350], location: [350, 200],
 };
 export const PRESETS = {
   spectrum: null, // per-category
@@ -100,12 +102,15 @@ function draw(els, paint, ctx) {
       const inner = draw(e.els, paint, ctx);
       if (!inner) continue;
       const st = ctx.anim ? animStyle(e.an, ctx.used) : null;
-      out += st ? `<g style="${st}">${inner}</g>` : inner;
+      let g = st ? `<g style="${st}">${inner}</g>` : inner;
+      // scaled group: transform on an outer g (CSS animation transforms would override it), stroke kept at full weight
+      if (e.tf) g = `<g transform="translate(${e.tf[1]} ${e.tf[2]}) scale(${e.tf[0]})" stroke-width="${+(ctx.sw / e.tf[0]).toFixed(3)}">${g}</g>`;
+      out += g;
       continue;
     }
     // an open accent path is an accent-coloured stroke (role A), never a filled shape
     const role = e.t === 'path' && e.r === 'a' && !/z\s*$/i.test(e.d) ? 'A' : e.r;
-    const a = role === 'x' ? { fill: 'none', stroke: 'none' } : paint(role);
+    const a = role === 'x' ? { fill: 'none', stroke: 'none' } : paint(role, e);
     if (!a) continue;
     const isDraw = ctx.anim && e.an && e.an.startsWith('draw');
     const st = ctx.anim ? animStyle(e.an, ctx.used, isDraw) : null;
@@ -155,8 +160,9 @@ function pathBox(d) {
   }
   return xs.length ? [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] : null;
 }
+const tfBox = (b, tf) => (b && tf ? [b[0] * tf[0] + tf[1], b[1] * tf[0] + tf[2], b[2] * tf[0] + tf[1], b[3] * tf[0] + tf[2]] : b);
 function box(e) {
-  if (e.t === 'g') return e.els.map(box).filter(Boolean).reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])], [99, 99, -99, -99]);
+  if (e.t === 'g') return tfBox(e.els.map(box).filter(Boolean).reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])], [99, 99, -99, -99]), e.tf);
   if (e.r === 'x') return null;
   if (e.t === 'rect') return [e.x, e.y, e.x + e.w, e.y + e.h];
   if (e.t === 'circle') return [e.cx - e.rad, e.cy - e.rad, e.cx + e.rad, e.cy + e.rad];
@@ -166,6 +172,35 @@ function box(e) {
 const hasShape = (e) => (e.t === 'g' ? e.els.some(hasShape) : (e.r === 'b' || e.r === 'a') && !(e.t === 'path' && !/z\s*$/i.test(e.d)));
 const inside = (a, b) => a && b && a[0] >= b[0] - 0.05 && a[1] >= b[1] - 0.05 && a[2] <= b[2] + 0.05 && a[3] <= b[3] + 0.05;
 const meets = (a, b) => a && b && a[0] < b[2] + 1.5 && b[0] < a[2] + 1.5 && a[1] < b[3] + 1.5 && b[1] < a[3] + 1.5;
+
+// Which details sit on top of a body (drawn dark) versus over empty space (drawn light)? Decided once per icon from
+// bounding boxes, so colour and iso need no <mask>: masks re-rasterise every frame when anything inside them moves.
+const ON_BODY = new WeakMap();
+function onBody(icon) {
+  let m = ON_BODY.get(icon);
+  if (m) return m;
+  m = new Map();
+  const shapes = [], details = [];
+  const walk = (els, tf) => {
+    for (const e of els) {
+      if (e.t === 'g') {
+        const t2 = e.tf ? (tf ? [tf[0] * e.tf[0], tf[1] + e.tf[1] * tf[0], tf[2] + e.tf[2] * tf[0]] : e.tf) : tf;
+        walk(e.els, t2);
+        continue;
+      }
+      const b = tfBox(box(e), tf);
+      if (!b) continue;
+      const closed = !(e.t === 'path' && !/z\s*$/i.test(e.d));
+      if ((e.r === 'b' || e.r === 'a') && closed) shapes.push(b);
+      else if (e.r === 'd' || e.r === 'f') details.push([e, b]);
+    }
+  };
+  walk(icon.els, null);
+  const within = (a, b) => a[0] >= b[0] - 0.6 && a[1] >= b[1] - 0.6 && a[2] <= b[2] + 0.6 && a[3] <= b[3] + 0.6;
+  for (const [e, b] of details) m.set(e, shapes.some((sb) => within(b, sb)));
+  ON_BODY.set(icon, m);
+  return m;
+}
 
 let counter = 0;
 const ROUND = { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
@@ -177,7 +212,7 @@ export function renderSvg(icon, opt = {}) {
   const variant = opt.variant || 'line';
   const sw = opt.strokeWidth ?? 1.5;
   const uid = opt.uid || `bri-${icon.name}-${(++counter).toString(36)}`;
-  const ctx = { anim: !!opt.animated, used: new Set() };
+  const ctx = { anim: !!opt.animated, used: new Set(), sw };
   const size = opt.size ?? (variant === 'iso' ? 64 : 24);
   const title = opt.title === false ? '' : `<title>${esc(opt.title || icon.name.replace(/-/g, ' '))}</title>`;
   const head = (vb, extra = {}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${size}"${attrs(extra)} role="img">${title}`;
@@ -193,7 +228,8 @@ export function renderSvg(icon, opt = {}) {
       const inner = draw([u], paint, ctx);
       if (!cut.length || !inner) { body += inner; return; }
       const id = `${uid}k${i}`;
-      const knock = cut.map((j) => draw([units[j]], (r) => ((r === 'b' || r === 'a') ? { fill: '#000', stroke: '#000' } : null), ctx)).join('');
+      const still = { ...ctx, anim: false, sw: sw + 2.2 }; // knock-outs stay static: animated mask content repaints every frame
+      const knock = cut.map((j) => draw([units[j]], (r) => ((r === 'b' || r === 'a') ? { fill: '#000', stroke: '#000' } : null), still)).join('');
       defs += `<mask id="${id}" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><rect x="-2" y="-2" width="28" height="28" fill="#fff" stroke="none"/><g stroke-width="${sw + 2.2}"${attrs(ROUND)}>${knock}</g></mask>`;
       body += `<g mask="url(#${id})">${inner}</g>`;
     });
@@ -215,23 +251,20 @@ export function renderSvg(icon, opt = {}) {
 
   const p = resolvePalette(icon, opt.palette);
 
-  // details sit dark on top of bodies and switch to `lone` colour where they cross empty space
-  const split = (inner, lone, mIn, mOut, extra = {}) =>
-    `<g mask="url(#${mIn})">` + draw(icon.els, (r) => (r === 'd' ? { fill: 'none', stroke: inner, ...extra } : r === 'f' ? { fill: inner, stroke: 'none' } : null), ctx) + '</g>' +
-    `<g mask="url(#${mOut})">` + draw(icon.els, (r) => (r === 'd' ? { fill: 'none', stroke: lone, ...extra } : r === 'f' ? { fill: lone, stroke: 'none' } : null), ctx) + '</g>';
-  const masks = (id, sw2, box = '-4 -4 32 32') => {
-    const [x, y, w, h] = box.split(' ');
-    const sh = (c) => `<g stroke-width="${sw2}"${attrs(ROUND)}>` + draw(icon.els, (r) => (isShape(r) ? { fill: c, stroke: c } : null), ctx) + '</g>';
-    return `<mask id="${id}i" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}">${sh('#fff')}</mask>` +
-      `<mask id="${id}o" maskUnits="userSpaceOnUse" x="${x}" y="${y}" width="${w}" height="${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff"/>${sh('#000')}</mask>`;
-  };
+  // details sit dark on top of bodies and light where they cross empty space (see onBody)
+  const ob = onBody(icon);
+  const split = (inner, lone) => draw(icon.els, (r, e) => {
+    if (r !== 'd' && r !== 'f') return null;
+    const c = ob.get(e) ? inner : lone;
+    return r === 'f' ? { fill: c, stroke: 'none' } : { fill: 'none', stroke: c };
+  }, ctx);
   const grad = (id, a, b, ex = '') => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"${ex}><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
 
   if (variant === 'color') {
-    const defs = `<defs>${grad(uid + 'g', p.l, p.m)}${grad(uid + 'a', p.al, p.a)}${masks(uid, sw)}</defs>`;
+    const defs = `<defs>${grad(uid + 'g', p.l, p.m)}${grad(uid + 'a', p.al, p.a)}</defs>`;
     const shapes = draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: p.s } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: p.as } : null), ctx);
     const shine = draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff', 'stroke-opacity': '.9' } : null), ctx);
-    const body = shapes + split(p.d, p.s, uid + 'i', uid + 'o') + draw(icon.els, (r) => (r === 'A' ? { fill: 'none', stroke: p.as } : null), ctx) + shine;
+    const body = shapes + split(p.d, p.s) + draw(icon.els, (r) => (r === 'A' ? { fill: 'none', stroke: p.as } : null), ctx) + shine;
     return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + defs + body + '</svg>';
   }
 
@@ -241,6 +274,7 @@ export function renderSvg(icon, opt = {}) {
   const GM = (k = 0) => `matrix(${0.866 * sg} ${0.5 * sg} 0 ${sg} ${(+gx + 0.866 * sg * k).toFixed(3)} ${(+gy - 0.5 * sg * k).toFixed(3)})`;
   const TM = `matrix(${0.866 * s} ${0.5 * s} ${-0.866 * s} ${0.5 * s} 32 ${cyT - 12 * s})`;
   const isw = Math.max(sw, 1.5) * 1.15;
+  ctx.sw = isw;
   const tileR = '<rect x="-3" y="-3" width="30" height="30" rx="6.5"/>';
   let slab = '';
   for (let k = T; k >= 1; k -= 0.5) slab += `<g transform="translate(0 ${k})"><g transform="${TM}" fill="url(#${uid}s)">${tileR}</g></g>`;
@@ -249,19 +283,19 @@ export function renderSvg(icon, opt = {}) {
     `<ellipse cx="12" cy="12" rx="12" ry="5" fill="url(#${uid}r)"${ctx.anim ? ` style="transform-box:fill-box;transform-origin:center;animation:bri-shadow ${SHADOW[1]}"` : ''}/></g>`;
   const layer = (k, paint) => `<g transform="${GM(k)}" stroke-width="${isw}"${attrs(ROUND)}>` + draw(icon.els, paint, ctx) + '</g>';
   let glyph = '';
-  const steps = 7;
+  const steps = 3; // three extrusion copies read as solid depth at icon sizes; each copy repeats every animation
   for (let i = steps; i >= 1; i--) {
     const c = i === steps ? p.dd : p.d;
     glyph += layer((depth * i) / steps, (r) => (r === 'h' ? null : r === 'f' ? { fill: c, stroke: 'none' } : isShape(r) ? { fill: c, stroke: c } : { fill: 'none', stroke: c }));
   }
   glyph += `<g transform="${GM(0)}" stroke-width="${isw}"${attrs(ROUND)}>` +
     draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: '#fff' } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: p.al } : null), ctx) +
-    split(p.d, '#fff', uid + 'i', uid + 'o') + draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff' } : r === 'A' ? { fill: 'none', stroke: p.a } : null), ctx) + '</g>';
+    split(p.d, '#fff') + draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff' } : r === 'A' ? { fill: 'none', stroke: p.a } : null), ctx) + '</g>';
   const defs = `<defs>${grad(uid + 'g', '#fff', p.l)}${grad(uid + 'a', p.al, p.a)}${grad(uid + 't', p.m, p.k, '')}` +
     `<linearGradient id="${uid}s" gradientUnits="userSpaceOnUse" x1="-3" y1="27" x2="27" y2="-3"><stop offset="0" stop-color="${p.k}"/><stop offset=".499" stop-color="${p.k}"/><stop offset=".5" stop-color="${p.d}"/><stop offset="1" stop-color="${p.d}"/></linearGradient>` +
     `<radialGradient id="${uid}r"><stop offset="0" stop-color="${p.dd}" stop-opacity=".75"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient>` +
     `<radialGradient id="${uid}q"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>` +
-    masks(uid, isw) + `</defs>`;
+    `</defs>`;
   const A = ctx.anim;
   const ground = `<ellipse cx="32" cy="${cyT + T + 4}" rx="27" ry="12" fill="url(#${uid}q)"/>`;
   const extra = A ? `@keyframes bri-hover{${HOVER[0]}}@keyframes bri-shadow{${SHADOW[0]}}` : '';

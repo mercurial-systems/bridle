@@ -13,10 +13,15 @@ const pub = path.join(root, 'site/public');
 const STYLES = ['line', 'solid', 'color', 'iso'].flatMap((v) => [[v, false], [v, true]]);
 const dir = (v, a) => (a ? `${v}-animated` : v);
 
+// Cloudflare Pages takes at most 20,000 files per deploy, so line/solid motion ship in the zip and renderer only.
+const HOSTED = STYLES.filter(([v, a]) => !a || v === 'color' || v === 'iso');
 rmSync(path.join(pub, 'svg'), { recursive: true, force: true });
+rmSync(path.join(root, '.zipstage'), { recursive: true, force: true });
 for (const [v, a] of STYLES) {
-  mkdirSync(path.join(pub, 'svg', dir(v, a)), { recursive: true });
-  for (const i of ICONS) writeFileSync(path.join(pub, 'svg', dir(v, a), `${i.name}.svg`), renderSvg(i, { variant: v, animated: a, uid: `bri-${i.name}` }) + '\n');
+  const hosted = HOSTED.some(([hv, ha]) => hv === v && ha === a);
+  const base = path.join(hosted ? pub : path.join(root, '.zipstage'), 'svg', dir(v, a));
+  mkdirSync(base, { recursive: true });
+  for (const i of ICONS) writeFileSync(path.join(base, `${i.name}.svg`), renderSvg(i, { variant: v, animated: a, uid: `bri-${i.name}` }) + '\n');
 }
 // sprites: <svg><use href="bridle-line.svg#wallet"/></svg>
 for (const v of ['line', 'solid']) {
@@ -37,5 +42,8 @@ require('esbuild').buildSync({ entryPoints: [path.join(root, 'src/element.mjs')]
 // one zip with every SVG, sprite and the manifest
 const zip = path.join(pub, 'bridle-svg.zip');
 rmSync(zip, { force: true });
-execFileSync('python3', ['-m', 'zipfile', '-c', zip, 'svg', 'bridle-line.svg', 'bridle-solid.svg', 'icons.json'], { cwd: pub });
+// zip = hosted styles + the unhosted motion styles staged outside public/
+execFileSync('bash', ['-c', `cp -r svg/. ${path.join(root, '.zipstage/svg')}/ && cp bridle-line.svg bridle-solid.svg icons.json ${path.join(root, '.zipstage')}/`], { cwd: pub });
+execFileSync('python3', ['-m', 'zipfile', '-c', zip, 'svg', 'bridle-line.svg', 'bridle-solid.svg', 'icons.json'], { cwd: path.join(root, '.zipstage') });
+rmSync(path.join(root, '.zipstage'), { recursive: true, force: true });
 console.log(`bridle: ${ICONS.length} icons x ${STYLES.length} styles = ${ICONS.length * STYLES.length} SVGs`);

@@ -67,3 +67,5 @@ export const coin = (cx, cy, r, role = 'a', an) => G(an, C(cx, cy, r, role), C(c
 export const card = (x, y, w, h, role = 'b') => R(x, y, w, h, 2.2, role);
 // invisible pivot: gives a rotating group a bounding box centred on (cx, cy)
 export const X = (cx, cy, rad) => C(cx, cy, rad, 'x');
+// scaled group: draws `els` at scale s, offset (dx, dy); strokes keep their full weight
+export const S = (s, dx, dy, ...els) => ({ t: 'g', tf: [s, dx, dy], els });

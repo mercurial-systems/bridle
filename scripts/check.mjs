@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { ICONS, renderSvg, VARIANTS } from '../src/index.mjs';
 const names = new Set();
-for (const i of ICONS) {
+for (const i of ICONS.filter((x) => !process.env.CAT || x.cat === process.env.CAT)) {
   assert.match(i.name, /^[a-z0-9]+(-[a-z0-9]+)*$/, i.name);
   assert.ok(!names.has(i.name), `duplicate ${i.name}`);
   names.add(i.name);

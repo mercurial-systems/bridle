@@ -1,6 +1,7 @@
-import { ICONS, CATEGORIES, renderSvg, type Icon, type RenderOptions, type Variant } from 'bridle';
+import { ICONS, CATEGORIES as ALL_CATEGORIES, renderSvg, type Icon, type RenderOptions, type Variant } from 'bridle';
 
-export { ICONS, CATEGORIES };
+export const CATEGORIES = ALL_CATEGORIES.filter((c) => c.icons.length);
+export { ICONS };
 export type { Icon, Variant };
 
 export type Style = { variant: Variant; animated: boolean };

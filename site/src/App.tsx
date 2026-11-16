@@ -1,206 +1,311 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Download, GitBranch as Github, Sparkles, X, Box, Copy, Image as ImageIcon, Moon, Sun } from 'lucide-react';
-import { GradientHeading } from '@/components/ui/gradient-heading';
+import { ArrowRight, Download, GitBranch, Search, X, Copy, Image as ImageIcon, Box } from 'lucide-react';
 import { TextAnimate } from '@/components/ui/text-animate';
 import { TextureButton } from '@/components/ui/texture-button';
 import { RollingNumber } from '@/components/ui/rolling-number';
-import { GradientAnimation } from '@/components/ui/bg-animated-gradient';
-import { HaloSearchInput } from '@/components/ui/halo-search';
 import { HaloSegmented } from '@/components/ui/halo-segmented';
 import { HaloSwitch } from '@/components/ui/halo-switch';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { CopyButton } from '@/components/ui/copy-button';
 import { CodeBlock } from '@/components/ui/code-block';
 import { DirectionAwareTabs } from '@/components/ui/direction-aware-tabs';
-import { TextureCard, TextureCardContent, TextureCardHeader, TextureCardTitle, TextureCardDescription } from '@/components/ui/texture-card';
 import { cn } from '@/lib/utils';
+import { useVisible } from '@/lib/visible';
 import { CATEGORIES, ICONS, PRESET_SWATCHES, STYLE_LIST, download, downloadPng, fileSvg, hexToHue, match, styleId, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
 
 const GITHUB = 'https://github.com/mercurial-systems/bridle';
 const SITE = 'https://bridle.verity.dev';
-const byName = Object.fromEntries(ICONS.map((i) => [i.name, i]));
+const byName: Record<string, Icon> = Object.fromEntries(ICONS.map((i) => [i.name, i]));
+const TOTAL = ICONS.length;
+const NEW = TOTAL - 220;
+const fmt = (n: number) => n.toLocaleString('en-US');
 
+/* ---------------------------------------------------------------- routing (two pages, no router) */
+function usePath() {
+  const [path, setPath] = useState(location.pathname);
+  useEffect(() => {
+    const f = () => setPath(location.pathname);
+    addEventListener('popstate', f);
+    return () => removeEventListener('popstate', f);
+  }, []);
+  const go = useCallback((p: string) => {
+    history.pushState(null, '', p);
+    setPath(p.split('?')[0]);
+    scrollTo(0, 0);
+  }, []);
+  return [path, go] as const;
+}
+
+/* ---------------------------------------------------------------- one icon */
 function Svg({ icon, look, size, className }: { icon: Icon; look: Partial<Look>; size: number; className?: string }) {
-  const html = useMemo(() => svgFor(icon, look, size), [icon, look, size]);
+  const html = useMemo(() => svgFor(icon, look, size), [icon, look.variant, look.animated, look.palette, look.strokeWidth, size]);
   return <span className={cn('inline-flex leading-[0]', className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-/* ------------------------------------------------------------------ hero */
-const HERO_ICONS = ['crypto-wallet', 'credit-card', 'analytics', 'bank', 'swap', 'rocket', 'vault', 'block', 'shield-check', 'chart-bar', 'nft', 'coins'];
-const GRADIENTS = [
-  { centerX: 20, centerY: 20, stops: [{ color: 'rgba(139,92,246,.55)', position: 0 }, { color: 'rgba(7,7,12,0)', position: 55 }] },
-  { centerX: 80, centerY: 30, stops: [{ color: 'rgba(236,72,153,.45)', position: 0 }, { color: 'rgba(7,7,12,0)', position: 55 }] },
-  { centerX: 60, centerY: 80, stops: [{ color: 'rgba(20,184,166,.45)', position: 0 }, { color: 'rgba(7,7,12,0)', position: 55 }] },
-  { centerX: 30, centerY: 70, stops: [{ color: 'rgba(251,146,60,.4)', position: 0 }, { color: 'rgba(7,7,12,0)', position: 55 }] },
-];
+// Animates only while on screen, and (unless Motion is on) only while hovered.
+function LiveSvg({ icon, look, size, className, hover }: { icon: Icon; look: Partial<Look>; size: number; className?: string; hover?: boolean }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const visible = useVisible(ref);
+  const animated = visible && (!!look.animated || !!hover);
+  const html = useMemo(() => svgFor(icon, { ...look, animated }, size), [icon, look.variant, look.palette, look.strokeWidth, animated, size]);
+  return <span ref={ref} className={cn('inline-flex leading-[0]', className)} dangerouslySetInnerHTML={{ __html: html }} />;
+}
 
-function Hero() {
-  const total = ICONS.length;
+/* ---------------------------------------------------------------- nav */
+function Nav({ go, path }: { go: (p: string) => void; path: string }) {
+  const link = (p: string, label: string) => (
+    <a href={p} onClick={(e) => { e.preventDefault(); go(p); }} className={cn('rounded-lg px-3 py-1.5 text-[15px] text-ink/70 hover:text-ink', path === p && 'font-medium text-ink')}>{label}</a>
+  );
   return (
-    <section className="relative overflow-hidden border-b">
-      <div className="absolute inset-0 opacity-70"><GradientAnimation gradients={GRADIENTS} animationDuration={14} /></div>
-      <div className="grain absolute inset-0" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-28 pb-20 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pt-36 lg:pb-28">
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full border bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur">
-            <Sparkles className="size-3.5 text-violet-300" /> Free and open source · MIT
-          </span>
-          <GradientHeading size="xxl" weight="black" className="mt-5 pb-1 leading-none" variant="light">Bridle</GradientHeading>
-          <TextAnimate text="Next-gen icons for business, money and crypto." type="rollIn" className="mt-3 max-w-xl p-0 pb-0 text-2xl font-semibold tracking-tight text-white md:text-3xl dark:text-white" />
-          <p className="mt-4 max-w-xl text-base text-white/65">
-            {total} original icons drawn once on one grid, then rendered as line, solid, colour and isometric 3D, still or in motion.
-            Copy the SVG, drop in the React component, or grab the whole set.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <div className="w-44"><TextureButton variant="accent" onClick={() => document.getElementById('icons')?.scrollIntoView()}>Browse icons</TextureButton></div>
-            <div className="w-44"><TextureButton variant="secondary" onClick={() => (location.href = '/bridle-svg.zip')}><Download className="mr-2 size-4" />All SVGs (.zip)</TextureButton></div>
-            <div className="w-36"><TextureButton variant="minimal" onClick={() => window.open(GITHUB, '_blank', 'noopener')}><Github className="mr-2 size-4" />GitHub</TextureButton></div>
-          </div>
-          <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4">
-            {[[total, 'icons'], [8, 'styles'], [total * 8, 'ready-made SVGs']].map(([n, l]) => (
-              <div key={l} className="rounded-2xl border bg-white/[.03] p-3 backdrop-blur">
-                <dt className="text-2xl font-bold tabular-nums text-white"><RollingNumber value={n as number} /></dt>
-                <dd className="text-xs text-white/55">{l}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-        <div className="relative grid grid-cols-4 gap-1 sm:gap-3 [perspective:900px]">
-          {HERO_ICONS.map((n, i) => (
-            <motion.div key={n} initial={{ opacity: 0, y: 30, rotateX: 25 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.15 + i * 0.06, type: 'spring', bounce: 0.35 }}
-              className={cn('flex justify-center', i % 2 ? 'translate-y-6' : '')}>
-              <Svg icon={byName[n]} look={{ variant: 'iso', animated: true }} size={120} className="w-full max-w-[120px] drop-shadow-[0_18px_30px_rgba(0,0,0,.45)] [&_svg]:h-auto [&_svg]:w-full" />
-            </motion.div>
-          ))}
-        </div>
+    <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 sm:px-6">
+        <a href="/" onClick={(e) => { e.preventDefault(); go('/'); }} className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+          <Svg icon={byName['sparkles']} look={{ variant: 'color', palette: 'mint' }} size={26} /> Bridle
+        </a>
+        <nav className="flex items-center gap-1">
+          <button onClick={() => go('/icons')} className="mr-1 hidden rounded-lg p-2 text-ink/60 hover:bg-tile sm:block" aria-label="Search icons"><Search className="size-[18px]" /></button>
+          {link('/icons', 'Icons')}
+          {link('/use', 'Docs')}
+          <a href={GITHUB} className="hidden rounded-lg px-3 py-1.5 text-[15px] text-ink/70 hover:text-ink sm:block">GitHub</a>
+          <a href="/bridle-svg.zip" className="ml-2 hidden rounded-lg border bg-band px-3.5 py-1.5 text-sm font-medium hover:bg-tile sm:block">Download</a>
+        </nav>
       </div>
-    </section>
+    </header>
   );
 }
 
-/* ------------------------------------------------------------------ styles showcase */
-function StyleShowcase() {
-  const [name, setName] = useState('crypto-wallet');
-  const picks = ['crypto-wallet', 'credit-card', 'bank', 'rocket', 'swap', 'piggy-bank'];
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">One drawing. <span className="spectrum-text">Eight styles.</span></h2>
-          <p className="mt-2 max-w-2xl text-white/60">Every icon is a single set of shapes with roles: body, accent, detail. The renderer turns those roles into strokes, fills, gradients or a lit 3D tile, so all eight styles always match.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {picks.map((p) => (
-            <button key={p} onClick={() => setName(p)} className={cn('rounded-xl border p-2 transition hover:bg-white/10', p === name && 'border-violet-400/60 bg-violet-500/10')} aria-label={p}>
-              <Svg icon={byName[p]} look={{ variant: 'color' }} size={26} />
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {STYLE_LIST.map((s) => (
-          <TextureCard key={s.id} className="overflow-hidden">
-            <div className={cn('flex h-40 items-center justify-center', s.variant === 'line' || s.variant === 'solid' ? 'text-white' : '')}>
-              <Svg icon={byName[name]} look={{ variant: s.variant, animated: s.animated }} size={s.variant === 'iso' ? 128 : 72} />
-            </div>
-            <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-white/60">
-              <span>{s.label}</span>
-              <span className="font-mono text-white/35">{s.id}</span>
-            </div>
-          </TextureCard>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ browser */
-const VARIANTS: { value: Variant; label: string }[] = [
+/* ---------------------------------------------------------------- home */
+const MOCK = [['dashboard', 'Overview'], ['crypto-wallet', 'Wallet'], ['swap', 'Swap'], ['credit-card', 'Cards'], ['chart-line', 'Markets'], ['shield-check', 'Security'], ['settings', 'Settings']];
+const SHOW_VARIANTS: { value: Variant; label: string }[] = [
   { value: 'line', label: 'Line' }, { value: 'solid', label: 'Solid' }, { value: 'color', label: 'Colour' }, { value: 'iso', label: 'Isometric' },
 ];
 
-function Browser({ onOpen, look, setLook, light, setLight }: { onOpen: (i: Icon) => void; look: Look; setLook: (l: Look) => void; light: boolean; setLight: (b: boolean) => void }) {
-  const [q, setQ] = useState('');
-  const [cat, setCat] = useState('all');
-  const [custom, setCustom] = useState('#8b5cf6');
-  const armed = useRef(false); // the picker reports its colour on mount; only react once the user touches it
-  const dq = useDeferredValue(q);
-  const list = useMemo(() => ICONS.filter((i) => (cat === 'all' || i.cat === cat) && match(i, dq)), [cat, dq]);
-  const mono = look.variant === 'line' || look.variant === 'solid';
-  const size = look.variant === 'iso' ? 84 : 34;
-  const set = (p: Partial<Look>) => setLook({ ...look, ...p });
-
+function HeroMock() {
+  const [variant, setVariant] = useState<Variant>('color');
+  const [active, setActive] = useState(1);
+  const iso = variant === 'iso';
   return (
-    <section id="icons" className="mx-auto max-w-7xl scroll-mt-4 px-4 pb-24 sm:px-6">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">The library</h2>
-        <p className="mt-2 text-white/60">SaaS, business operations, corporate work, finance, banking, cards and a full crypto section. Click any icon to copy or download it.</p>
-      </div>
-
-      <div className="sticky top-2 z-30 rounded-3xl border bg-[#0b0a12]/85 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="min-w-0 flex-1">
-            <HaloSearchInput value={q} onChange={(e) => setQ(e.target.value)} onClear={() => setQ('')} placeholder={`Search ${ICONS.length} icons: wallet, swap, invoice…`} aria-label="Search icons" />
+    <div>
+      <div className="dots relative overflow-hidden rounded-2xl border bg-[#f2f3ef] p-6 sm:p-8">
+        <div className="mx-auto w-full max-w-[340px] rounded-2xl border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(20,24,18,.25)]">
+          <div className="flex items-center gap-3 px-2 pb-3">
+            <Svg icon={byName['user']} look={{ variant: 'color', palette: 'sunset' }} size={34} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Treasury</p>
+              <p className="truncate text-xs text-muted-foreground">3 accounts · 12 assets</p>
+            </div>
+            <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-semibold text-white">PRO</span>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <HaloSegmented items={VARIANTS} value={look.variant} onValueChange={(v) => set({ variant: v as Variant })} />
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <HaloSwitch checked={look.animated} onCheckedChange={(c) => set({ animated: c })} aria-label="Animate" /> Motion
-            </label>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {mono ? (
-            <>
-              <span className="text-xs text-white/45">Stroke</span>
-              <HaloSegmented items={[1, 1.5, 2].map((n) => ({ value: String(n), label: String(n) }))} value={String(look.strokeWidth)} onValueChange={(v) => set({ strokeWidth: +v })} />
-              <button onClick={() => setLight(!light)} className="ml-1 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs text-white/70 hover:bg-white/10">
-                {light ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />} {light ? 'Dark canvas' : 'Light canvas'}
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="text-xs text-white/45">Palette</span>
-              {PRESET_SWATCHES.map((p) => (
-                <button key={p.id} title={p.label} onClick={() => set({ palette: p.id as Look['palette'] })}
-                  className={cn('size-7 rounded-full border-2 transition hover:scale-110', look.palette === p.id ? 'border-white' : 'border-transparent')}
-                  style={{ background: `linear-gradient(135deg, ${p.colors[0]}, ${p.colors[1]})` }} aria-label={`${p.label} palette`} />
+          {iso ? (
+            <div className="grid grid-cols-3 gap-1 border-t pt-3">
+              {MOCK.slice(0, 6).map(([n, l]) => (
+                <div key={n} className="flex flex-col items-center"><LiveSvg icon={byName[n]} look={{ variant: 'iso', animated: true }} size={78} /><span className="-mt-1 text-[11px] text-muted-foreground">{l}</span></div>
               ))}
-              <div onPointerDown={() => (armed.current = true)} onKeyDown={() => (armed.current = true)} className={cn('flex items-center gap-2 rounded-full border px-2 py-0.5', typeof look.palette === 'number' && 'border-white/60')}>
-                <span className="text-xs text-white/55">Custom</span>
-                <ColorPicker color={custom} onChange={(c) => { if (!armed.current || c === custom) return; setCustom(c); set({ palette: hexToHue(c) }); }} />
-              </div>
-            </>
+            </div>
+          ) : (
+            <ul className="border-t pt-2">
+              {MOCK.map(([n, l], i) => (
+                <li key={n}>
+                  <button onMouseEnter={() => setActive(i)} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-sm', i === active ? 'bg-tile font-medium' : 'text-ink/75')}>
+                    <span className="text-ink"><LiveSvg icon={byName[n]} look={{ variant }} hover={i === active} size={20} /></span>
+                    {l}
+                    {i === 2 && <span className="ml-auto rounded-md bg-lime px-1.5 text-[10px] font-semibold">NEW</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-          {[{ id: 'all', label: 'All', n: ICONS.length }, ...CATEGORIES.map((c) => ({ id: c.id, label: c.label, n: c.icons.length }))].map((c) => (
-            <button key={c.id} onClick={() => setCat(c.id)}
-              className={cn('shrink-0 rounded-full border px-3 py-1.5 text-xs transition', cat === c.id ? 'border-white/70 bg-white text-black' : 'text-white/70 hover:bg-white/10')}>
-              {c.label} <span className="opacity-50">{c.n}</span>
-            </button>
-          ))}
-        </div>
       </div>
-
-      <p className="mt-5 text-xs text-white/40">{list.length} icon{list.length === 1 ? '' : 's'}</p>
-      <div className={cn('mt-2 grid gap-2', look.variant === 'iso' ? 'grid-cols-[repeat(auto-fill,minmax(118px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(96px,1fr))]')}>
-        {list.map((i) => (
-          <button key={i.name} onClick={() => onOpen(i)}
-            className={cn('icon-cell group flex flex-col items-center gap-2 rounded-2xl border px-1 pt-5 pb-3 transition hover:-translate-y-0.5 hover:border-white/25',
-              light && mono ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-white/[.025] text-white hover:bg-white/[.06]')}>
-            <Svg icon={i} look={look} size={size} className="transition group-hover:scale-110" />
-            <span className={cn('max-w-full truncate px-1 text-[11px]', light && mono ? 'text-neutral-500' : 'text-white/50')}>{i.name}</span>
-          </button>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {SHOW_VARIANTS.map((v) => (
+          <button key={v.value} onClick={() => setVariant(v.value)} className={cn('rounded-full border px-3.5 py-1.5 text-sm transition', v.value === variant ? 'border-ink/20 bg-white font-medium shadow-sm' : 'bg-band text-ink/65 hover:bg-tile')}>{v.label}</button>
         ))}
       </div>
-      {!list.length && <p className="py-20 text-center text-white/50">Nothing matches “{q}”. Try a broader word like “card”, “chart” or “token”.</p>}
-    </section>
+    </div>
   );
 }
 
-/* ------------------------------------------------------------------ detail drawer */
+const CARD_ICONS = ['home', 'analytics', 'wallet', 'invoice', 'bank', 'block'];
+const STYLE_CARDS: { variant: Variant; title: string; sub: string; bg: string }[] = [
+  { variant: 'line', title: 'Line', sub: '1.5 stroke', bg: '#f3f1ec' },
+  { variant: 'solid', title: 'Solid', sub: 'Knock-out details', bg: '#eef3f8' },
+  { variant: 'color', title: 'Colour', sub: 'Gradient duotone', bg: '#f8eeee' },
+  { variant: 'iso', title: 'Isometric', sub: 'Extruded 3D', bg: '#f1effa' },
+];
+
+function StyleCard({ c }: { c: (typeof STYLE_CARDS)[number] }) {
+  const [hover, setHover] = useState(false);
+  const iso = c.variant === 'iso';
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} className="rounded-2xl p-6 text-center" style={{ background: c.bg }}>
+      <div className={cn('mx-auto grid w-fit grid-cols-3 text-ink', iso ? 'gap-0' : 'gap-5')}>
+        {CARD_ICONS.map((n) => <LiveSvg key={n} icon={byName[n]} look={{ variant: c.variant }} hover={hover} size={iso ? 64 : 30} />)}
+      </div>
+      <p className="mt-6 text-xl font-semibold">{c.title}</p>
+      <p className="text-ink/55">{c.sub}</p>
+    </div>
+  );
+}
+
+function Home({ go }: { go: (p: string) => void }) {
+  return (
+    <main>
+      <section className="border-b bg-gradient-to-b from-[#fafaf8] to-white">
+        <div className="mx-auto grid max-w-[1400px] items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_1fr] lg:py-24">
+          <div>
+            <h1 className="text-[42px] leading-[1.05] font-semibold tracking-tight sm:text-6xl">
+              Next-gen icons <span className="text-ink/35">that make money look good.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-ink/70 sm:text-xl">
+              {fmt(TOTAL)} original icons for SaaS, finance, banking and crypto. Line, solid, colour and isometric 3D, still or in motion. Free and MIT licensed.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button onClick={() => go('/icons')} className="inline-flex items-center gap-2 rounded-xl border border-lime-deep/30 bg-lime px-5 py-3 text-[15px] font-semibold text-ink shadow-[inset_0_-2px_0_rgba(0,0,0,.08)] hover:brightness-95">
+                Explore {fmt(TOTAL)} icons <ArrowRight className="size-4" />
+              </button>
+              <div className="w-48"><TextureButton variant="minimal" onClick={() => (location.href = '/bridle-svg.zip')}><Download className="mr-2 size-4" />All SVGs (.zip)</TextureButton></div>
+            </div>
+            <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4">
+              {[[TOTAL, 'icons'], [8, 'styles'], [CATEGORIES.length, 'categories'], [TOTAL * 8, 'SVG files']].map(([n, l]) => (
+                <div key={l}><dt className="text-3xl font-semibold tabular-nums"><RollingNumber value={n as number} /></dt><dd className="text-sm text-ink/55">{l}</dd></div>
+              ))}
+            </dl>
+          </div>
+          <HeroMock />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{STYLE_CARDS.map((c) => <StyleCard key={c.variant} c={c} />)}</div>
+        <p className="mt-5 text-center text-sm text-ink/50">Hover a card to play its motion. Every style also ships as an animated SVG.</p>
+      </section>
+
+      <section className="border-y bg-band">
+        <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
+          <TextAnimate text="Built for every product." type="rollIn" className="m-0 p-0 pb-0 text-center text-4xl font-semibold tracking-tight text-ink sm:text-5xl dark:text-ink" />
+          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-ink/60">From dashboards and invoices to validators, perps and prediction markets. {fmt(NEW)} new icons in this release.</p>
+          <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {CATEGORIES.map((c) => (
+              <button key={c.id} onClick={() => go(`/icons?c=${c.id}`)} className="group flex items-center gap-3 rounded-xl border bg-white p-3 text-left hover:border-ink/20">
+                <Svg icon={c.icons[0]} look={{ variant: 'color' }} size={28} />
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{c.label}</span><span className="text-xs text-ink/50">{fmt(c.icons.length)} icons</span></span>
+                <ArrowRight className="size-4 text-ink/30 transition group-hover:translate-x-0.5 group-hover:text-ink" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+      <Usage />
+    </main>
+  );
+}
+
+/* ---------------------------------------------------------------- library */
+const Tile = memo(function Tile({ icon, look, onOpen, size }: { icon: Icon; look: Look; onOpen: (i: Icon) => void; size: number }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button onClick={() => onOpen(icon)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} title={icon.name}
+      className={cn('tile group relative flex aspect-square items-center justify-center rounded-lg bg-tile text-ink transition-colors hover:bg-[#e9eae4]', look.variant === 'iso' && 'rounded-xl')}>
+      <LiveSvg icon={icon} look={look} hover={hover} size={size} />
+      <span className="pointer-events-none absolute inset-x-1 bottom-1 truncate text-center text-[10px] text-ink/55 opacity-0 transition group-hover:opacity-100">{icon.name}</span>
+    </button>
+  );
+});
+
+const PAGE = 240;
+function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => void; onOpen: (i: Icon) => void }) {
+  const params = new URLSearchParams(location.search);
+  const [q, setQ] = useState(params.get('q') || '');
+  const [cat, setCat] = useState(params.get('c') || 'all');
+  const [limit, setLimit] = useState(PAGE);
+  const [custom, setCustom] = useState('#22c55e');
+  const armed = useRef(false); // the colour picker reports its colour on mount; only react once touched
+  const dq = useDeferredValue(q);
+  const list = useMemo(() => ICONS.filter((i) => (cat === 'all' || i.cat === cat) && match(i, dq)), [cat, dq]);
+  const shown = list.slice(0, limit);
+  const sentinel = useRef<HTMLDivElement>(null);
+  const more = useVisible(sentinel);
+  useEffect(() => { if (more && limit < list.length) setLimit((l) => l + PAGE); }, [more, limit, list.length]);
+  useEffect(() => setLimit(PAGE), [cat, dq, look.variant]);
+  useEffect(() => {
+    const u = new URL(location.href);
+    if (cat === 'all') u.searchParams.delete('c'); else u.searchParams.set('c', cat);
+    if (dq) u.searchParams.set('q', dq); else u.searchParams.delete('q');
+    history.replaceState(null, '', u);
+  }, [cat, dq]);
+  const mono = look.variant === 'line' || look.variant === 'solid';
+  const iso = look.variant === 'iso';
+  const set = (p: Partial<Look>) => setLook({ ...look, ...p });
+  const catLabel = cat === 'all' ? 'All icons' : CATEGORIES.find((c) => c.id === cat)?.label;
+
+  return (
+    <main>
+      <section className="border-b bg-gradient-to-b from-band to-[#f3f4f0]">
+        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+          <label className="flex items-center gap-3 rounded-xl border border-ink/15 bg-white px-4 py-3.5 shadow-sm focus-within:border-lime-deep/60 focus-within:ring-4 focus-within:ring-lime/40">
+            <Search className="size-5 text-lime-deep" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${fmt(TOTAL)} icons…`} className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-ink/40" aria-label="Search icons" />
+            {q && <button onClick={() => setQ('')} className="rounded-md p-1 text-ink/50 hover:bg-tile" aria-label="Clear search"><X className="size-4" /></button>}
+          </label>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            <div className="flex items-center gap-2"><span className="text-sm font-semibold">Styles:</span>
+              <HaloSegmented translucent={false} items={SHOW_VARIANTS} value={look.variant} onValueChange={(v) => set({ variant: v as Variant })} />
+            </div>
+            <label className="flex items-center gap-2 text-sm font-semibold">Motion <HaloSwitch translucent={false} checked={look.animated} onCheckedChange={(c) => set({ animated: c })} aria-label="Animate all visible icons" /></label>
+            {mono ? (
+              <div className="flex items-center gap-2"><span className="text-sm font-semibold">Stroke:</span>
+                <HaloSegmented translucent={false} items={[1, 1.5, 2].map((n) => ({ value: String(n), label: String(n) }))} value={String(look.strokeWidth)} onValueChange={(v) => set({ strokeWidth: +v })} />
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5"><span className="mr-1 text-sm font-semibold">Palette:</span>
+                {PRESET_SWATCHES.map((p) => (
+                  <button key={p.id} title={p.label} aria-label={`${p.label} palette`} onClick={() => set({ palette: p.id as Look['palette'] })}
+                    className={cn('size-6 rounded-full ring-offset-2 transition hover:scale-110', look.palette === p.id && 'ring-2 ring-ink')}
+                    style={{ background: `linear-gradient(135deg, ${p.colors[0]}, ${p.colors[1]})` }} />
+                ))}
+                <span onPointerDown={() => (armed.current = true)} onKeyDown={() => (armed.current = true)} className={cn('ml-1 rounded-full', typeof look.palette === 'number' && 'ring-2 ring-ink ring-offset-2')}>
+                  <ColorPicker color={custom} onChange={(c) => { if (!armed.current || c === custom) return; setCustom(c); set({ palette: hexToHue(c) }); }} />
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto flex max-w-[1400px] gap-8 px-4 py-8 sm:px-6">
+        <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] w-60 shrink-0 overflow-y-auto pr-2 lg:block">
+          <p className="mb-2 text-sm font-semibold">Categories</p>
+          {[{ id: 'all', label: 'All icons', n: TOTAL }, ...CATEGORIES.map((c) => ({ id: c.id, label: c.label, n: c.icons.length }))].map((c) => (
+            <button key={c.id} onClick={() => setCat(c.id)} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-[14px]', cat === c.id ? 'bg-tile font-medium' : 'text-ink/70 hover:bg-band')}>
+              <span className="truncate">{c.label}</span><span className="text-xs text-ink/45 tabular-nums">{fmt(c.n)}</span>
+            </button>
+          ))}
+        </aside>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] lg:hidden">
+            {[{ id: 'all', label: 'All' }, ...CATEGORIES].map((c) => (
+              <button key={c.id} onClick={() => setCat(c.id)} className={cn('shrink-0 rounded-full border px-3 py-1 text-sm', cat === c.id ? 'border-ink bg-ink text-white' : 'bg-white')}>{c.label}</button>
+            ))}
+          </div>
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-2xl font-semibold">{catLabel}</h2>
+            <p className="text-sm text-ink/50">{fmt(list.length)} icons{dq && ` for “${dq}”`}</p>
+          </div>
+          <p className="mt-1 mb-5 text-sm text-ink/55">Click any icon to copy it as SVG, React or a URL, or download a PNG.</p>
+          <div className={cn('grid gap-2', iso ? 'grid-cols-[repeat(auto-fill,minmax(104px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(68px,1fr))]')}>
+            {shown.map((i) => <Tile key={i.name} icon={i} look={look} onOpen={onOpen} size={iso ? 88 : 28} />)}
+          </div>
+          {limit < list.length && <div ref={sentinel} className="py-10 text-center text-sm text-ink/45">Loading more…</div>}
+          {!list.length && <p className="py-24 text-center text-ink/55">No icons match “{q}”. Try a broader word like “card”, “chart” or “token”.</p>}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* ---------------------------------------------------------------- detail */
 function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onClose: () => void; setLook: (l: Look) => void }) {
   const file = fileSvg(icon, look);
   const sid = styleId(look);
@@ -213,40 +318,36 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
     return () => removeEventListener('keydown', k);
   }, [onClose]);
   return (
-    <motion.div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fixed inset-0 z-50 flex justify-end bg-ink/25" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.aside role="dialog" aria-label={`${icon.name} icon`} onClick={(e) => e.stopPropagation()}
-        initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 60, opacity: 0 }} transition={{ type: 'spring', bounce: 0.12, duration: 0.45 }}
-        className="h-full w-full max-w-xl overflow-y-auto border-l bg-[#0b0a12] p-5 sm:p-7">
+        initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={{ type: 'spring', bounce: 0.1, duration: 0.4 }}
+        className="h-full w-full max-w-xl overflow-y-auto border-l bg-white p-5 shadow-2xl sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-widest text-white/40">{CATEGORIES.find((c) => c.id === icon.cat)?.label}</p>
+            <p className="text-xs font-medium tracking-wide text-ink/45 uppercase">{CATEGORIES.find((c) => c.id === icon.cat)?.label}</p>
             <h3 className="mt-1 font-mono text-2xl font-semibold">{icon.name}</h3>
-            <div className="mt-2 flex flex-wrap gap-1.5">{icon.tags.map((t) => <span key={t} className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white/55">{t}</span>)}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">{icon.tags.slice(0, 10).map((t) => <span key={t} className="rounded-md bg-tile px-2 py-0.5 text-xs text-ink/60">{t}</span>)}</div>
           </div>
-          <button onClick={onClose} className="rounded-full border p-2 text-white/70 hover:bg-white/10" aria-label="Close"><X className="size-4" /></button>
+          <button onClick={onClose} className="rounded-lg border p-2 text-ink/60 hover:bg-tile" aria-label="Close"><X className="size-4" /></button>
         </div>
-
-        <div className={cn('relative mt-6 flex h-72 items-center justify-center overflow-hidden rounded-3xl border', look.variant === 'line' || look.variant === 'solid' ? 'bg-white text-neutral-900' : 'bg-[radial-gradient(circle_at_50%_30%,#2a2245,#0b0a12_70%)]')}>
-          <Svg icon={icon} look={look} size={look.variant === 'iso' ? 240 : 150} />
+        <div className="dots mt-6 flex h-72 items-center justify-center rounded-2xl border bg-band text-ink">
+          <Svg icon={icon} look={{ ...look, animated: true }} size={look.variant === 'iso' ? 240 : 140} />
         </div>
-
-        <div className="mt-4 grid grid-cols-4 gap-2">
+        <div className="mt-3 grid grid-cols-4 gap-2">
           {STYLE_LIST.map((s) => (
             <button key={s.id} onClick={() => setLook({ ...look, variant: s.variant, animated: s.animated })} title={s.label}
-              className={cn('flex flex-col items-center gap-1 rounded-2xl border p-2 text-white transition hover:bg-white/10', s.id === sid && 'border-violet-400/70 bg-violet-500/10')}>
-              <Svg icon={icon} look={{ ...look, variant: s.variant, animated: s.animated }} size={s.variant === 'iso' ? 54 : 30} />
-              <span className="text-[10px] text-white/50">{s.label}</span>
+              className={cn('flex flex-col items-center gap-1 rounded-xl border p-2 text-ink transition hover:bg-band', s.id === sid && 'border-lime-deep/50 bg-lime/25')}>
+              <Svg icon={icon} look={{ ...look, variant: s.variant, animated: false }} size={s.variant === 'iso' ? 50 : 26} />
+              <span className="text-[10px] text-ink/55">{s.label}</span>
             </button>
           ))}
         </div>
-
         <div className="mt-5 flex flex-wrap gap-2">
-          <div className="w-36"><TextureButton variant="accent" onClick={() => download(`${icon.name}-${sid}.svg`, new Blob([file], { type: 'image/svg+xml' }))}><Download className="mr-2 size-4" />SVG</TextureButton></div>
-          <div className="w-36"><TextureButton variant="secondary" onClick={() => downloadPng(icon, look)}><ImageIcon className="mr-2 size-4" />PNG 512</TextureButton></div>
-          <div className="flex items-center gap-1 rounded-xl border px-3 text-sm text-white/70"><Copy className="size-3.5" /> SVG <CopyButton value={file} /></div>
-          <div className="flex items-center gap-1 rounded-xl border px-3 text-sm text-white/70"><Box className="size-3.5" /> JSX <CopyButton value={jsx} /></div>
+          <button onClick={() => download(`${icon.name}-${sid}.svg`, new Blob([file], { type: 'image/svg+xml' }))} className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink/85"><Download className="size-4" />SVG</button>
+          <button onClick={() => downloadPng(icon, look)} className="inline-flex items-center gap-2 rounded-xl border bg-band px-4 py-2.5 text-sm font-medium hover:bg-tile"><ImageIcon className="size-4" />PNG 512</button>
+          <div className="flex items-center gap-1 rounded-xl border px-3 text-sm text-ink/70"><Copy className="size-3.5" /> SVG <CopyButton value={file} /></div>
+          <div className="flex items-center gap-1 rounded-xl border px-3 text-sm text-ink/70"><Box className="size-3.5" /> JSX <CopyButton value={jsx} /></div>
         </div>
-
         <div className="mt-6">
           <CodeBlock tabs={[
             { label: 'React', language: 'tsx', code: `import { BridleIcon } from 'bridle-icons/react';\n\n${jsx}` },
@@ -260,93 +361,66 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
   );
 }
 
-/* ------------------------------------------------------------------ usage + principles */
+/* ---------------------------------------------------------------- docs */
 function Usage() {
   const tabs = [
-    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                       // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="iso" palette="ocean" size={96} />\n<BridleIcon name="swap" variant="color" palette={200} />   // any hue`} language="tsx" /> },
+    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                      // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="iso" palette="ocean" size={96} />\n<BridleIcon name="wallet-check" variant="solid" />       // status variants`} language="tsx" /> },
     { id: 1, label: 'Web component', content: <CodeBlock code={`<script type="module" src="${SITE}/bridle.js"></script>\n\n<bridle-icon name="bank"></bridle-icon>\n<bridle-icon name="swap" variant="color" animated></bridle-icon>\n<bridle-icon name="block" variant="iso" animated size="96" hue="180"></bridle-icon>`} language="html" /> },
-    { id: 2, label: 'Plain SVG', content: <CodeBlock code={`<!-- every icon in every style is a static file -->\n<img src="${SITE}/svg/color-animated/rocket.svg" width="32" alt="rocket" />\n\n<!-- or a sprite (line and solid inherit currentColor) -->\n<svg width="24" height="24"><use href="${SITE}/bridle-line.svg#wallet" /></svg>\n\n<!-- everything at once -->\n${SITE}/bridle-svg.zip\n${SITE}/icons.json`} language="html" /> },
-    { id: 3, label: 'JavaScript', content: <CodeBlock code={`import { svg, ICONS } from 'bridle-icons';\n\nel.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });\nconst coin = svg('token', { variant: 'iso', animated: true, palette: [42, 210] });\nconsole.log(ICONS.length); // ${ICONS.length}`} language="js" /> },
+    { id: 2, label: 'Plain SVG', content: <CodeBlock code={`<img src="${SITE}/svg/color-animated/rocket.svg" width="32" alt="rocket" />\n<svg width="24" height="24"><use href="${SITE}/bridle-line.svg#wallet" /></svg>\n\n${SITE}/bridle-svg.zip   // every icon, every style\n${SITE}/icons.json       // names, tags, categories`} language="html" /> },
+    { id: 3, label: 'JavaScript', content: <CodeBlock code={`import { svg, ICONS } from 'bridle-icons';\n\nel.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });\nconst coin = svg('token', { variant: 'iso', animated: true, palette: [42, 210] });\nconsole.log(ICONS.length); // ${TOTAL}`} language="js" /> },
   ];
   return (
-    <section className="border-t">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.3fr]">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Use it anywhere</h2>
-          <p className="mt-3 text-white/60">A React component, a framework-free web component, plain files on a CDN, sprites and a zero-dependency renderer. Same names everywhere.</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {[
-              ['24 px grid', '2 px safe area, 1.5 stroke, round caps and joins. Line and solid inherit your text colour.'],
-              ['Roles, not paths', 'Body, accent and detail shapes drive every style, so colour and 3D never drift from line.'],
-              ['Motion built in', 'CSS keyframes inside each SVG: works in <img>, needs no runtime, honours reduced-motion.'],
-              ['Mark-free crypto', 'Abstract glyphs only: no chain or token logos, so every icon is safe to ship anywhere.'],
-            ].map(([t, d]) => (
-              <TextureCard key={t}>
-                <TextureCardHeader><TextureCardTitle className="text-base">{t}</TextureCardTitle></TextureCardHeader>
-                <TextureCardContent className="pt-0"><TextureCardDescription className="pl-0">{d}</TextureCardDescription></TextureCardContent>
-              </TextureCard>
-            ))}
-          </div>
-        </div>
-        <div className="min-w-0"><DirectionAwareTabs tabs={tabs} className="mx-auto" /></div>
+    <section className="mx-auto grid max-w-[1400px] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.3fr]">
+      <div>
+        <h2 className="text-4xl font-semibold tracking-tight">Build the way <span className="text-ink/35">you need.</span></h2>
+        <p className="mt-3 text-lg text-ink/60">React, a framework-free web component, static files, sprites and a zero-dependency renderer. Same names everywhere.</p>
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+          {[
+            ['24 px grid', '2 px safe area, 1.5 stroke, round caps. Line and solid inherit your text colour.'],
+            ['One drawing, eight styles', 'Body, accent and detail roles drive every style, so they never drift apart.'],
+            ['Motion that stays smooth', 'Transform and opacity keyframes only, no animated masks, paused offscreen, honours reduced-motion.'],
+            ['Mark-free crypto', 'Abstract glyphs only: no chain or token logos, safe to ship anywhere.'],
+          ].map(([t, d]) => (
+            <li key={t} className="rounded-2xl border bg-band p-5"><p className="font-semibold">{t}</p><p className="mt-1 text-sm text-ink/60">{d}</p></li>
+          ))}
+        </ul>
       </div>
+      <div className="min-w-0"><DirectionAwareTabs tabs={tabs} className="mx-auto" /></div>
     </section>
   );
 }
 
 function Footer() {
   return (
-    <footer className="border-t">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-12 text-sm text-white/55 sm:px-6 md:flex-row md:items-center md:justify-between">
+    <footer className="border-t bg-band">
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-10 text-sm text-ink/60 sm:px-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <Svg icon={byName['sparkles']} look={{ variant: 'iso', palette: 'grape' }} size={44} />
-          <div>
-            <p className="font-semibold text-white">Bridle</p>
-            <p>A public good from Verity. Icons and code under the MIT licence.</p>
-          </div>
+          <Svg icon={byName['sparkles']} look={{ variant: 'color', palette: 'mint' }} size={30} />
+          <div><p className="font-semibold text-ink">Bridle</p><p>A public good from Verity. Icons and code under the MIT licence.</p></div>
         </div>
         <div className="flex flex-col gap-1 md:text-right">
-          <a href={GITHUB} className="text-white/80 hover:text-white">github.com/mercurial-systems/bridle</a>
-          <p className="text-xs text-white/40">Verity has not announced a token. Any airdrop or presale offer is a scam.</p>
+          <a href={GITHUB} className="inline-flex items-center gap-1.5 text-ink/80 hover:text-ink md:justify-end"><GitBranch className="size-4" />mercurial-systems/bridle</a>
+          <p className="text-xs text-ink/45">Verity has not announced a token. Any airdrop or presale offer is a scam.</p>
         </div>
       </div>
     </footer>
   );
 }
 
-function Nav() {
-  return (
-    <header className="fixed inset-x-0 top-0 z-40">
-      <div className="mx-3 mt-3 flex max-w-7xl items-center justify-between rounded-2xl border bg-black/30 px-3 py-2 backdrop-blur-xl sm:mx-6 xl:mx-auto">
-        <a href="/" className="flex items-center gap-2 font-semibold">
-          <Svg icon={byName['sparkles']} look={{ variant: 'color', animated: true, palette: 'grape' }} size={26} /> Bridle
-        </a>
-        <nav className="flex items-center gap-1 text-sm text-white/70">
-          <a href="#icons" className="rounded-lg px-3 py-1.5 hover:bg-white/10">Icons</a>
-          <a href="#use" className="hidden rounded-lg px-3 py-1.5 hover:bg-white/10 sm:block">Use</a>
-          <a href={GITHUB} className="rounded-lg px-3 py-1.5 hover:bg-white/10" aria-label="GitHub"><Github className="size-4" /></a>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 export default function App() {
-  const [look, setLook] = useState<Look>({ variant: 'color', animated: false, palette: 'spectrum', strokeWidth: 1.5 });
-  const [light, setLight] = useState(false);
+  const [path, go] = usePath();
+  const [look, setLook] = useState<Look>({ variant: 'line', animated: false, palette: 'spectrum', strokeWidth: 1.5 });
   const [open, setOpen] = useState<Icon | null>(() => byName[new URLSearchParams(location.search).get('icon') || ''] || null);
   useEffect(() => {
     const u = new URL(location.href);
     if (open) u.searchParams.set('icon', open.name); else u.searchParams.delete('icon');
     history.replaceState(null, '', u);
   }, [open]);
+  const onOpen = useCallback((i: Icon) => setOpen(i), []);
   return (
     <div className="min-h-screen">
-      <Nav />
-      <Hero />
-      <StyleShowcase />
-      <Browser onOpen={setOpen} look={look} setLook={setLook} light={light} setLight={setLight} />
-      <div id="use"><Usage /></div>
+      <Nav go={go} path={path} />
+      {path.startsWith('/icons') ? <Library look={look} setLook={setLook} onOpen={onOpen} /> : path.startsWith('/use') ? <Usage /> : <Home go={go} />}
       <Footer />
       <AnimatePresence>{open && <Detail key={open.name} icon={open} look={look} setLook={setLook} onClose={() => setOpen(null)} />}</AnimatePresence>
     </div>

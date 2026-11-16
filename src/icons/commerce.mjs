@@ -1,0 +1,98 @@
+import { R, C, E, P, G, I, X, gear, star, poly, spark, arc, wedge, cube, card } from '../dsl.mjs';
+
+// square parcel (front view) with a tape strip down the middle of the top edge
+const box = (x, y, s, role = 'b') => [R(x, y, s, s, 1.5, role), P(`M${x + s / 2} ${y}v${+(s * 0.32).toFixed(2)}`)];
+// person: head + shoulders, left of centre
+const person = (cx) => [C(cx, 7.5, 3.5), P(`M${cx - 6} 20.5c0-3.6 2.7-6.5 6-6.5s6 2.9 6 6.5Z`)];
+const hangTag = (cx) => `M${cx} 2.5l4.5 4.2V18a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 ${cx - 4.5} 18V6.7Z`;
+const pin = (cx, cy, r) => `M${cx} ${cy + r * 1.5}s-${r}-${r * 0.85}-${r}-${r * 1.5}a${r} ${r} 0 0 1 ${2 * r} 0c0 ${r * 0.65}-${r} ${r * 1.5}-${r} ${r * 1.5}Z`;
+
+export default [
+  // ---- shopping ----
+  I('shopping-bag', 'bag shop purchase retail buy', [G('float', P('M5 8h14l-1 12.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20.5Z'), P('M9 10.5V6.5a3 3 0 0 1 6 0v4'), C(12, 15.5, 2.2, 'a'))]),
+  I('basket', 'shopping basket groceries buy store', [P('M7 9c0-3 2.2-5 5-5s5 2 5 5'), C(12, 6.5, 1.3, 'f', 'drop'), P('M4 11h16l-1.8 8.4a2 2 0 0 1-2 1.6H7.8a2 2 0 0 1-2-1.6Z'), R(2.5, 8.5, 19, 3, 1.5, 'a'), P('M9 14v4M12 14v4M15 14v4')]),
+  I('wishlist', 'saved favourites list want later', [R(3.5, 3, 13, 17, 2), P('M6.5 7.5h7M6.5 11h7M6.5 14.5h3'), P('M17 21.2l-3.6-3.4a2.3 2.3 0 0 1 3.6-2.9 2.3 2.3 0 0 1 3.6 2.9Z', 'a', 'beat')]),
+  I('gift-box', 'gift present reward surprise bonus', [R(4.5, 10.5, 15, 10.5, 1.5), R(3, 7, 18, 3.5, 1.2), R(10.5, 7, 3, 14, 0, 'a'), P('M12 7c-1-3-5-4-5-1.5 0 1.5 3 1.5 5 1.5ZM12 7c1-3 5-4 5-1.5 0 1.5-3 1.5-5 1.5Z', 'a', 'pulse')]),
+  I('coupon', 'discount ticket promo code offer', [P('M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5Z'), P('M15.5 7.5v1.5M15.5 11.25v1.5M15.5 15v1.5'), P('M7.5 14.5l4-5'), C(7.6, 9.8, 1.1, 'a', 'pulse'), C(11.4, 14.2, 1.1, 'a', 'pulse:.5')]),
+  I('voucher', 'gift voucher certificate credit present', [R(2.5, 6, 19, 12, 2), R(7, 6, 2.5, 12, 0, 'a'), P('M8.25 10c-1-2.5-4-2.5-3.5-.5.3 1 2 1 3.5.5ZM8.25 10c1-2.5 4-2.5 3.5-.5-.3 1-2 1-3.5.5Z', 'a', 'pop'), P('M13 11h5M13 14h3', 'd', 'draw')]),
+  I('loyalty-card', 'stamps rewards punch card points', [card(2.5, 5, 19, 14), P('M6 8.5h5'), C(6.5, 14, 1.4, 'a'), C(10.3, 14, 1.4, 'a'), C(14.1, 14, 1.4, 'a'), C(17.9, 14, 1.4, 'd', 'blink')]),
+  I('membership', 'member vip club premium tier', [card(2.5, 5, 19, 14), G('float', P('M7.5 15.5l-1-6.3 3.2 2.3L12 8l2.3 3.5 3.2-2.3-1 6.3Z', 'a')), P('M8.5 17h7', 'h')]),
+  I('flash-sale', 'deal limited lightning promo burst', [P(star(12, 12, 9.5, 7.8, 12)), P('M13.2 5.5 8.5 13h3.6L11 18.5l4.7-7.5h-3.6Z', 'a', 'blink')]),
+  I('bundle', 'pack set multi bundle boxes kit', [...box(3, 12, 8), ...box(13, 12, 8), G('float', ...box(8, 3.5, 8, 'a'))]),
+  I('box-open', 'unbox open package reveal product', [P(spark(12, 5, 2.6), 'a', 'pulse'), P('M4 10h16v9.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5Z'), P('M4 10 2.5 6.5h7.5L12 10Z'), P('M20 10l1.5-3.5H14L12 10Z'), P('M7 17h3')]),
+  I('parcel-taped', 'parcel sealed box packed carton', [G('float', R(3.5, 4.5, 17, 15, 2), R(10, 4.5, 4, 7, 0, 'a'), P('M6.5 16.5h4M6.5 14h2'))]),
+  I('price-label', 'price tag cost dollar hang', [G('swing', P('M12 2.5l5 4.5v12.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5V7Z'), C(12, 7.2, 1.1, 'd'), P('M14 11.6c-.3-.6-1-1-1.9-1-1 0-1.8.5-1.8 1.3 0 1.8 3.8 1 3.8 2.8 0 .8-.8 1.4-1.9 1.4-.9 0-1.6-.4-1.9-1M12 9.6v1M12 16.1v1', 'a'))]),
+  I('price-drop', 'markdown sale reduced lower price', [P(hangTag(9)), C(9, 6.8, 1, 'd'), P('M7 11h4M7 14h2.5'), C(17, 16.5, 4.2, 'a'), G('slide-d', P('M17 14.3v4.2M15.2 16.8l1.8 1.8 1.8-1.8'))]),
+  I('product-compare', 'compare versus side by side options', [R(2.5, 4.5, 8, 15, 2), R(13.5, 4.5, 8, 15, 2), P('M12 3v18'), P('M5 8h3M16 8h3'), R(5, 11.5, 3, 5, 0.8, 'a', 'grow'), R(16, 10, 3, 6.5, 0.8, 'a', 'grow:.4')]),
+  I('measure-tape', 'size ruler dimensions fit length', [R(2.5, 4, 14, 14, 4), C(9.5, 11, 3, 'd'), C(9.5, 11, 0.9, 'f'), R(9.5, 15, 12, 3, 0.6, 'a', 'grow-x')]),
+  I('parcel-scale', 'weight scale weigh shipping kilogram', [G('sink', R(7, 5, 10, 8.5, 1), P('M12 5v3')), P('M12 13.5V16'), R(3, 16, 18, 5, 1.5), R(9, 17.6, 6, 1.8, 0.6, 'a', 'blink')]),
+  I('cash-register', 'till checkout pos cashier sale', [G('slide-u', P('M16 11V4.5h4V11')), R(4.5, 3, 10, 5.5, 1.2, 'a'), P('M9.5 8.5V11'), R(2.5, 11, 19, 10, 2), P('M2.5 17h19M10 19h4'), C(6.5, 14, 0.9, 'f'), C(9.5, 14, 0.9, 'f'), C(12.5, 14, 0.9, 'f')]),
+  I('self-checkout', 'kiosk self service scan pay', [R(5, 2.5, 14, 11, 2), P('M8.5 8h7', 'a', 'scan'), P('M10 13.5v5M14 13.5v5'), R(6, 18.5, 12, 3, 1)]),
+  I('order-list', 'orders list purchases history items', [R(4.5, 3.5, 15, 17.5, 2.5), R(9, 2, 6, 3, 1, 'a'), C(8.5, 9, 1, 'f'), C(8.5, 13, 1, 'f'), C(8.5, 17, 1, 'f'), P('M11 9h5M11 13h5M11 17h3', 'd', 'draw')]),
+  I('order-confirmed', 'order placed confirmed success done', [...box(3, 3, 13), C(17, 17, 4.5, 'a', 'pop'), P('M15 17l1.5 1.5 3-3', 'd', 'draw')]),
+  I('barcode-scanner', 'scan gun sku checkout reader', [P('M16 7.5 21.5 4.5v7Z', 'a', 'blink'), P('M3 6.5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-3l-1.5 8.5a1.5 1.5 0 0 1-1.5 1.2H6.3a1 1 0 0 1-1-1.2l1.3-8.5H5a2 2 0 0 1-2-2Z'), P('M6.5 7.5h5')]),
+  I('new-arrival', 'new product launch fresh sparkle', [...box(3, 7.5, 13), P(spark(17.5, 6.5, 4), 'a', 'pulse')]),
+
+  // ---- shipping & logistics ----
+  I('delivery-van', 'van delivery courier transport vehicle', [G('slide-r', P('M2.5 7a2 2 0 0 1 2-2h9.5l4 4.5H20a1.5 1.5 0 0 1 1.5 1.5V16a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1Z'), P('M14.4 6.8l2 2.2h-2Z', 'a'), P('M5.5 9.5h5'), C(7, 17.5, 2), C(17, 17.5, 2))]),
+  I('cargo-ship', 'ship freight sea maritime vessel', [G('seesaw', R(5, 10, 4.5, 4, 0.5), R(10, 10, 4.5, 4, 0.5, 'a'), R(7.5, 6, 4.5, 4, 0.5), R(16, 7, 3, 7, 0.6), P('M2.5 14h19l-2.4 5.4a1.5 1.5 0 0 1-1.4.9H6.3a1.5 1.5 0 0 1-1.4-.9Z')), P('M3 21.5c1.5 0 1.5-.8 3-.8s1.5.8 3 .8', 'h')]),
+  I('air-cargo', 'air freight plane flight shipping', [G('float', P('M12 2.5c1 0 1.5 1 1.5 2.5v4.5l7 4v2l-7-2v4l2 1.5v1.5l-3.5-1-3.5 1V19l2-1.5v-4l-7 2v-2l7-4V5c0-1.5.5-2.5 1.5-2.5Z'), R(11, 9, 2, 5, 0.8, 'a'))]),
+  I('freight-train', 'train rail cargo locomotive transport', [R(5, 3, 14, 15, 3.5), R(7.5, 5.5, 9, 5, 1, 'a'), C(8.5, 14.5, 1.1, 'f', 'blink'), C(15.5, 14.5, 1.1, 'f', 'blink:.8'), P('M8.5 18 6.5 21.5M15.5 18l2 3.5')]),
+  I('forklift', 'lift warehouse pallet loader handling', [P('M5 12V6.5h4.5L12 12'), R(3, 12, 11, 5, 1), P('M15.5 4v14.5H21.5'), G('slide-u', R(16.5, 13, 5, 4.5, 0.8, 'a')), C(5.8, 18.5, 1.8), C(11.5, 18.5, 1.8)]),
+  I('pallet', 'skid stack freight load boxes', [...box(4, 9, 7.5), ...box(12.5, 9, 7.5), G('drop', R(8, 3, 8, 6, 1, 'a')), R(2.5, 16.5, 19, 2.5, 0.6), P('M4.5 19v2.5M12 19v2.5M19.5 19v2.5')]),
+  I('crate', 'wooden crate box cargo freight', [G('float', R(3.5, 4, 17, 16, 1.5), P('M3.5 8h17M3.5 16h17'), P('M6.5 16 17.5 8', 'a'))]),
+  I('shipping-container', 'container intermodal freight cargo box', [G('float', R(2.5, 6, 19, 12, 1.5), P('M6 9v6M9.5 9v6M13 9v6'), R(15.5, 7.5, 4.5, 9, 0.6, 'a'), P('M17.75 9.5v5'))]),
+  I('conveyor', 'conveyor belt production line sorting', [G('slide-r', R(4, 9, 6, 6, 1, 'a'), R(13, 10.5, 4.5, 4.5, 0.8)), R(2.5, 15, 19, 5, 2.5), C(5.5, 17.5, 1, 'f'), C(12, 17.5, 1, 'f'), C(18.5, 17.5, 1, 'f')]),
+  I('delivery-route', 'route path directions journey last mile', [C(5.5, 18.5, 2.2), P('M7.7 18.5H15a2.5 2.5 0 0 0 0-5H9a2.5 2.5 0 0 1 0-5h3', 'd', 'draw'), G('float', P(pin(17.5, 6, 4), 'a'), C(17.5, 6, 1.3, 'd'))]),
+  I('pallet-jack', 'pallet truck jack warehouse move', [P('M3.5 3.5h3M5 3.5 7.5 15.5H21.5'), R(10, 8.5, 10, 7, 1, 'a', 'sink'), C(8, 18.5, 2), C(19, 18.5, 1.5)]),
+  I('parcel-tracking', 'tracking shipment location live signal', [...box(3, 9, 11), C(17, 7, 3.8, 'd', 'ping'), C(17, 7, 1.8, 'a')]),
+  I('distribution-hub', 'hub fulfillment network distribution center', [C(5, 5, 2), C(19, 5, 2), C(5, 19, 2), C(19, 19, 2), P('M9.5 9.5 6.4 6.4M14.5 9.5l3.1-3.1M9.5 14.5l-3.1 3.1M14.5 14.5l3.1 3.1', 'd', 'draw'), R(8.5, 8.5, 7, 7, 1.5, 'a', 'pulse')]),
+  I('returns', 'return refund send back exchange', [G('slide-l', P('M18 6H7M9.5 3.5 7 6l2.5 2.5', 'a')), ...box(4, 10, 16).map((e) => (e.t === 'rect' ? { ...e, h: 10.5 } : e))]),
+  I('customs-checkpoint', 'customs border barrier import export', [R(3.5, 9, 3.5, 12, 1), C(5.25, 6, 1.4, 'f', 'blink'), R(7, 9.5, 14.5, 3, 1.5, 'a'), P('M11 9.5l-1.5 3M15.5 9.5 14 12.5M20 9.5l-1 2'), P('M2.5 21h6')]),
+  I('fragile', 'glass handle with care breakable', [G('shake', P('M7 3h10l-.5 5a4.5 4.5 0 0 1-9 0Z'), P('M11 3l1.5 2.5-1.5 2 1 1.5', 'a')), P('M12 12.5V20M8.5 20.5h7')]),
+  I('parcel-locker', 'locker pickup self collect lockers', [R(3, 3, 18, 18, 2), P('M12 3v18M3 9h18M3 15h18'), R(13.5, 10.5, 6, 3, 0.6, 'a', 'blink'), C(9.5, 6, 0.9, 'f'), C(9.5, 18, 0.9, 'f'), C(18.5, 6, 0.9, 'f'), C(18.5, 18, 0.9, 'f')]),
+  I('drone-delivery', 'drone air delivery quadcopter parcel', [G('float', P('M2.5 5h4M17.5 5h4', 'd', 'blink'), P('M4.5 5v3.5H8M19.5 5v3.5H16'), R(8, 6.5, 8, 4, 1.8), P('M12 10.5v3'), R(8.5, 13.5, 7, 6.5, 1, 'a'))]),
+  I('courier', 'courier scooter rider delivery moped', [G('slide-r', R(3, 7.5, 7.5, 6.5, 1, 'a'), P('M6.75 7.5V10'), P('M15 8h3M16.8 8 18.5 17.5M5.5 17.5h11.5'), C(5.5, 17.5, 2.5), C(18.5, 17.5, 2.5))]),
+  I('shipping-label', 'label address postage barcode parcel', [R(3, 4, 18, 16, 2), P('M6 7.5h7M6 10.5h5'), P('M6 14v3M8 14v3M10.5 14v3M12.5 14v3M15 14v3'), R(15, 6.5, 3.5, 4, 0.6, 'a', 'pop')]),
+  I('delivery-window', 'delivery slot time schedule eta', [R(3, 4, 14, 13, 2), P('M3 8.5h14M7 2.5v3M13 2.5v3'), C(7, 12.5, 0.9, 'f'), C(10, 12.5, 0.9, 'f'), C(17, 17, 4.5, 'a'), G('spin', X(17, 17, 3), P('M17 17v-2.4')), P('M17 17h1.8')]),
+  I('express-shipping', 'express fast priority same day rush', [P('M2.5 9h4M3.5 12h3M2.5 15h4', 'a', 'blink'), G('slide-r', ...box(9, 6, 12))]),
+  I('hand-truck', 'dolly hand truck moving boxes', [G('slide-r', P('M4 3.5h2.5v14h12'), R(8.5, 10.5, 9, 7, 1), R(9.5, 4.5, 6.5, 6, 1, 'a'), C(7.5, 19.5, 2))]),
+  I('loading-dock', 'dock bay loading shipping receiving', [P('M2.5 21V7.5L12 3l9.5 4.5V21Z'), P('M6.5 21V10h11v11M6.5 12.5h11'), G('slide-r', R(9, 15, 6, 6, 0.8, 'a'))]),
+  I('port-crane', 'crane gantry port harbour container lift', [P('M3.5 21V4h17v3H6.5v14Z'), G('swing', P('M16 7v5'), R(12.5, 12, 7, 4.5, 0.8, 'a')), P('M2.5 21h6')]),
+  I('this-side-up', 'orientation upright handling arrows', [R(3, 3, 18, 18, 2), G('slide-u', P('M9 15V8M6.5 10.5 9 8l2.5 2.5M15 15V8M12.5 10.5 15 8l2.5 2.5', 'a')), P('M7 18h10')]),
+  I('keep-dry', 'umbrella moisture waterproof handling', [P('M3 10a9 9 0 0 1 18 0Z', 'a'), P('M12 10v3'), ...box(7, 13, 8), C(4.5, 15, 0.9, 'f', 'drop'), C(19.5, 16, 0.9, 'f', 'drop:.8')]),
+  I('parcel-mailbox', 'post box letters mail delivery', [P('M3 18V10a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v8Z'), P('M8 5a5 5 0 0 1 5 5v8'), P('M16.5 11V3'), P('M16.5 3H20v3h-3.5Z', 'a', 'wave'), P('M10.5 18v3.5')]),
+  I('doorstep-delivery', 'home delivery porch drop off house', [P('M3.5 10.5 12 4l8.5 6.5V21h-17Z'), G('drop', R(9, 14, 6, 7, 0.8, 'a'), P('M12 14v2.5'))]),
+  I('cold-chain', 'refrigerated frozen cold storage temperature', [...box(3, 3, 13), C(17, 17, 4.5, 'a'), G('spin-slow', X(17, 17, 3), P('M17 14.2v5.6M14.6 15.6l4.8 2.8M14.6 18.4l4.8-2.8'))]),
+  I('international-shipping', 'global worldwide export import overseas', [C(10, 10, 7.5), P('M2.5 10h15M10 2.5c-2.6 2.6-2.6 12.4 0 15M10 2.5c2.6 2.6 2.6 12.4 0 15'), C(17.5, 17.5, 4.2, 'a', 'pop'), P('M15.8 15.8h3.4v3.4h-3.4ZM17.5 15.8v1.2', 'd')]),
+
+  // ---- retail ops ----
+  I('inventory-count', 'stocktake count inventory audit items', [R(3, 3, 8, 8, 1.2), R(13, 3, 8, 8, 1.2), R(3, 13, 8, 8, 1.2), C(17, 17, 4.5, 'a', 'pop'), P('M16 14.8v4.4M18.2 14.8v4.4M14.8 16.1h4.4M14.8 17.9h4.4')]),
+  I('restock', 'replenish refill shelf stock inventory', [P('M3.5 2.5v19M20.5 2.5v19M3.5 12h17M3.5 20.5h17'), G('drop', R(7, 5.5, 6, 6.5, 0.8, 'a')), R(5.5, 14.5, 5, 6, 0.8), R(12, 16, 4.5, 4.5, 0.6)]),
+  I('supplier', 'vendor supply provide wholesale hand', [P('M2.5 14.5h3l3.3 2h4.2a1.4 1.4 0 0 1 0 2.8H10.5M13 19.3h3.3l3.4-2.6a1.4 1.4 0 0 1 1.9 2.1L17.3 21.5H8.8l-2.8-1.4H2.5'), G('float', ...box(9, 3.5, 8, 'a'))]),
+  I('manufacturer', 'factory plant production industry make', [C(19.25, 3.6, 1.2, 'f', 'rise'), P('M2.5 21V10.5l5 3v-3l5 3v-3l5 3V6h3.5v15Z'), R(10.5, 16.5, 3.5, 4.5, 0.6, 'a'), C(6, 17.5, 0.9, 'f'), C(17.5, 17.5, 0.9, 'f')]),
+  I('assembly-line', 'robot arm automation production assembly', [P('M4 2.5h7'), G('swing', P('M7.5 2.5v5.5l4.5 3'), C(7.5, 8, 1.3, 'f'), P('M10.5 12.5l1.5 1.3 1.5-1.3')), R(15, 11.5, 5, 5, 0.8, 'a'), R(2.5, 16.5, 19, 4.5, 2.25), C(6, 18.75, 0.9, 'f'), C(18, 18.75, 0.9, 'f')]),
+  I('quality-control', 'qc inspection inspect verify standards', [...box(3, 3, 12), C(15.5, 15.5, 4.5, 'a'), P('M13.6 15.6l1.4 1.4 2.6-2.6', 'd', 'draw'), P('M18.8 18.8 21.5 21.5')]),
+  I('procurement', 'purchasing buying sourcing requisition', [R(3, 2.5, 12, 15, 2), P('M6 6.5h6M6 10h6M6 13.5h3'), C(16.5, 16.5, 5, 'a', 'pop'), P('M13.5 14.3h1.2l1 3.6h3.4l1-2.6h-4.8'), C(16, 19.8, 0.9, 'f'), C(18.9, 19.8, 0.9, 'f')]),
+  I('purchase-order', 'po order form buy document', [R(3.5, 2.5, 17, 19, 2.5), P('M7 7h1.6l1.7 6.5h6.2l1.4-4.5H9.2', 'a', 'draw'), C(10.8, 16.8, 1, 'f'), C(15.6, 16.8, 1, 'f')]),
+  I('warranty', 'guarantee protection product cover repair', [P('M12 2.5 19.5 5.5v6c0 4.5-3.2 8-7.5 10-4.3-2-7.5-5.5-7.5-10v-6Z'), G('pulse', R(9, 9, 6, 6, 1, 'a'), P('M12 9v2'))]),
+  I('stock-level', 'stock gauge capacity fill quantity', [R(4, 3, 16, 18, 2.5), P('M8 6.5h8'), R(6.5, 10, 11, 8.5, 1.2, 'a', 'grow')]),
+  I('sku', 'stock keeping unit code id product', [R(2.5, 6, 19, 12, 2), C(6.5, 12, 1.2, 'd'), P('M12 9v6M15.5 9v6M10.5 10.8h6.5M10.5 13.2h6.5', 'a', 'pop')]),
+  I('store-shelf', 'shelf aisle products merchandise display', [P('M3 11h18M3 20.5h18'), R(5, 4.5, 3, 6.5, 1), R(9.5, 3.5, 3, 7.5, 1), C(16.5, 8.3, 2.7, 'a', 'pop'), R(5, 14.5, 5, 6, 0.8), R(11.5, 16, 3.5, 4.5, 0.6), R(16.5, 13, 3, 7.5, 1)]),
+  I('out-of-stock', 'sold out unavailable empty stock', [...box(3, 3, 13), C(17, 17, 4.5, 'a'), G('shake', P('M15.5 15.5l3 3M18.5 15.5l-3 3'))]),
+  I('backorder', 'pending awaiting restock delayed order', [...box(3, 3, 13), C(17, 17, 4.5, 'a'), G('flip', P('M15.3 14.7h3.4M15.3 19.3h3.4M15.9 14.7c0 1.5 2.2 1.5 2.2 2.3s-2.2.8-2.2 2.3M18.1 14.7c0 1.5-2.2 1.5-2.2 2.3s2.2.8 2.2 2.3'))]),
+  I('batch-lot', 'batch lot run production stack', [R(3, 15.5, 18, 5, 1.5), P('M10 18h4'), R(4.5, 10, 15, 5, 1.5), P('M10 12.5h4'), G('float', R(6, 4.5, 12, 5, 1.5, 'a'))]),
+
+  // ---- marketplace ----
+  I('marketplace-seller', 'seller vendor merchant listing sell', [...person(9), G('swing', P('M17.5 9.5l3.5 3v6.5a1 1 0 0 1-1 1H15a1 1 0 0 1-1-1v-6.5Z', 'a'), C(17.5, 13, 0.9, 'd'))]),
+  I('marketplace-buyer', 'buyer customer shopper purchaser', [...person(9), G('float', P('M14.5 12.5h6.5l-.6 7.5a1 1 0 0 1-1 .9h-4.3a1 1 0 0 1-1-.9Z', 'a'), P('M16 12.5v-1a1.75 1.75 0 0 1 3.5 0v1'))]),
+  I('online-store', 'ecommerce web shop browser store', [R(2.5, 3.5, 19, 17, 2.5), P('M2.5 7.5h19'), C(5.5, 5.5, 0.9, 'f'), C(8.5, 5.5, 0.9, 'f'), P('M6 10h12v2a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0Z', 'a', 'sink'), P('M8 17.5h8')]),
+  I('market-stall', 'stall stand booth vendor pop up', [P('M3 9 5 4h14l2 5Z', 'a', 'sink'), P('M5 9v11.5M19 9v11.5'), C(8.5, 12.5, 1.3, 'f'), C(12, 12.5, 1.3, 'f'), C(15.5, 12.5, 1.3, 'f'), R(3.5, 14.5, 17, 4, 1)]),
+  I('review-stars', 'reviews rating stars feedback score', [P(star(12, 9, 5.2, 2.4), 'a', 'pop'), P(star(5, 15.5, 3, 1.4)), P(star(19, 15.5, 3, 1.4)), P('M8 20.5h8')]),
+  I('auction-paddle', 'bid paddle auction bidder raise', [G('tilt', C(12, 9, 6.5), C(12, 9, 3.6, 'a'), R(10.75, 15, 2.5, 6.5, 1.2))]),
+  I('marketplace', 'marketplace multi vendor shops platform', [R(3, 10, 8, 10.5, 1), P('M2.5 10h9v1.5a2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0Z', 'a', 'sink'), R(13, 6, 8, 14.5, 1), P('M12.5 6h9v1.5a2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0Z', 'a', 'sink:.5'), P('M2 20.5h20M6 20.5v-4h2v4M16 20.5v-4h2v4')]),
+  I('subscription-box', 'subscription recurring box monthly delivery', [...box(3, 9, 12), C(17.5, 6.5, 4, 'a'), G('spin', X(17.5, 6.5, 2.4), P(arc(17.5, 6.5, 2.2, 30, 300)))]),
+  I('product-review', 'review comment testimonial feedback rating', [P('M5 3.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-6l-4.5 4v-4H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z'), P(star(12, 10, 3.8, 1.7), 'a', 'pop')]),
+  I('best-seller', 'bestseller top award popular ribbon', [G('swing', P('M8 13 6.5 21l3-1.2 2 2L12 15Z'), P('M16 13l1.5 8-3-1.2-2 2L12 15Z'), C(12, 9.5, 6.5, 'a'), P(star(12, 9.5, 3, 1.4), 'd'))]),
+  I('pickup-point', 'pickup collect click and collect location', [G('float', P(pin(12, 6.5, 4.5), 'a'), C(12, 6.5, 1.5, 'd')), R(5, 14.5, 14, 7, 1.5), P('M12 14.5v2.5')]),
+];

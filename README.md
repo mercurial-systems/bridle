@@ -1,7 +1,7 @@
 # Bridle
 
-Next-gen open icons for SaaS, business operations, corporate work, finance, banking, cards and crypto.
-220 original icons, each drawn once on a 24 px grid and rendered in eight styles:
+Next-gen open icons for SaaS, business, finance, banking, payments and crypto.
+3,300+ original icons across 29 categories, each drawn once on a 24 px grid and rendered in eight styles:
 
 | style | file folder | notes |
 | --- | --- | --- |
@@ -12,6 +12,18 @@ Next-gen open icons for SaaS, business operations, corporate work, finance, bank
 | … each with motion | `<style>-animated` | CSS keyframes inside the SVG, honours `prefers-reduced-motion` |
 
 Browse, customise and download at **https://bridle.verity.dev**.
+
+Categories: SaaS & Product, Business & Operations, Corporate & Work, Finance, Banking, Cards & Payments, Crypto & Web3,
+Chain Infrastructure, Onchain Trading, DeFi & Web3 Ops, Interface & Navigation, Communication & Media, Devices &
+Development, Commerce & Logistics, Markets & Accounting, People & Workplace, Files Data & Security, Marketing & Growth,
+AI & Automation, Travel & Expenses, Property & Facilities, Legal & Compliance, Customer Support, Payments & Fintech,
+Wealth & Insurance, NFTs Gaming & Metaverse, Sustainability & ESG, Productivity & Editing, Maps & Location.
+
+Status variants (`wallet-check`, `invoice-clock`, `block-shield`, …) are generated from 67 base icons and 20 badges
+(`src/families.mjs`), so they always match their base drawing.
+
+Static files on the site cover line, solid, colour, iso, colour-animated and iso-animated (Cloudflare Pages caps a deploy
+at 20,000 files). Line and solid motion come from the zip, the renderer, React and the web component.
 
 ## Use
 
@@ -58,6 +70,9 @@ a preset (`spectrum` `sunset` `ocean` `mint` `grape` `lava` `gold` `ice`), a hue
 
 ## How it works
 
+Performance: animations use transform and opacity keyframes only and never run inside a `<mask>`; colour and iso decide
+detail colours from bounding boxes instead of masks, and the website only animates icons that are on screen.
+
 Each icon in `src/icons/*.mjs` is a short list of primitives with a **role**: `b` body, `a` accent, `d` detail, `f` dot,
 `h` shine. `src/render.mjs` reads the roles: line strokes everything (later shapes knock a gap out of strokes behind them),
 solid fills bodies and cuts details out, colour paints gradients, and iso shears the glyph upright onto a tile and extrudes
@@ -65,7 +80,7 @@ it. Motion is an `an` name on any primitive or group. One drawing, eight consist
 
 ```bash
 npm run check   # every icon renders in every style, ids resolve, names are unique
-npm run build   # writes site/public: 1,760 SVGs, sprites, icons.json, bridle.js, bridle-svg.zip
+npm run build   # writes site/public: SVG files, sprites, icons.json, bridle.js, bridle-svg.zip
 ```
 
 The website (`site/`) is Vite + React + Tailwind with [cult/ui](https://www.cult-ui.com) components.
