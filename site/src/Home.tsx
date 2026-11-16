@@ -13,15 +13,24 @@ import { GROUPS, ICONS, PRESET_SWATCHES, type Icon, type Look, type Variant } fr
 import { GITHUB, SHOW_VARIANTS, TOTAL, Svg, LiveSvg, byName, fmt, pick } from '@/lib/icon';
 
 const INSTALL = 'npm i github:mercurial-systems/bridle';
+
+// a colour icon on a soft white tile: the hero, collections and closing panel all use it
+function Chip({ icon, size, animated, className }: { icon: Icon; size: number; animated?: boolean; className?: string }) {
+  return (
+    <div className={cn('flex items-center justify-center rounded-[28%] border border-white/80 bg-white/85 shadow-[0_18px_40px_-18px_rgba(20,24,18,.28),inset_0_1px_0_#fff] backdrop-blur', className)} style={{ width: size, height: size }}>
+      {animated ? <LiveSvg icon={icon} look={{ variant: 'color', animated: true }} size={Math.round(size * 0.5)} /> : <Svg icon={icon} look={{ variant: 'color' }} size={Math.round(size * 0.5)} />}
+    </div>
+  );
+}
 const rise = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-80px' }, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } };
 
-/* ---------------------------------------------------------------- hero: floating 3D icons with pointer parallax */
+/* ---------------------------------------------------------------- hero: floating icon tiles with pointer parallax */
 // [icon, left %, top %, size px, depth (parallax px), float seconds, hide on small screens]
 const FLOATERS: [string, number, number, number, number, number, boolean][] = [
-  ['vault', 3, 12, 190, 36, 5.2, false], ['credit-card', 15, 44, 130, 18, 6.1, true], ['crypto-wallet', 1, 60, 165, 28, 4.6, true],
-  ['rocket', 21, 6, 100, 12, 5.6, true], ['coins', 13, 78, 112, 14, 6.4, false], ['block', 29, 82, 84, 8, 5.0, true],
-  ['bank', 82, 8, 180, 34, 5.4, false], ['nft', 72, 40, 120, 16, 6.2, true], ['shield-check', 86, 54, 158, 26, 4.8, true],
-  ['chart-bar', 68, 5, 96, 10, 5.8, true], ['token', 77, 80, 116, 15, 6.0, false], ['sparkles', 62, 84, 82, 8, 5.1, true],
+  ['vault', 5, 14, 132, 36, 5.2, false], ['credit-card', 2, 40, 80, 18, 6.1, true], ['crypto-wallet', 4, 60, 116, 28, 4.6, true],
+  ['rocket', 22, 9, 76, 12, 5.6, true], ['coins', 14, 78, 86, 14, 6.4, false], ['block', 29, 84, 64, 8, 5.0, true],
+  ['bank', 83, 10, 128, 34, 5.4, false], ['nft', 91, 36, 76, 16, 6.2, true], ['shield-check', 86, 56, 112, 26, 4.8, true],
+  ['chart-bar', 69, 8, 72, 10, 5.8, true], ['token', 78, 80, 88, 15, 6.0, false], ['sparkles', 63, 85, 62, 8, 5.1, true],
 ];
 
 function Hero({ go }: { go: (p: string) => void }) {
@@ -56,7 +65,7 @@ function Hero({ go }: { go: (p: string) => void }) {
             style={{ left: `${x}%`, top: `${y}%`, transform: `translate3d(calc(var(--mx, 0) * ${-depth}px), calc(var(--my, 0) * ${-depth}px), 0)` }}>
             <motion.div initial={{ opacity: 0, scale: 0.6, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.07, type: 'spring', bounce: 0.4, duration: 0.9 }}>
               <div className="max-md:origin-top-left max-md:scale-[.45] max-md:opacity-70"><div className="hero-float" style={{ animationDuration: `${dur}s`, animationDelay: `${-i * 0.7}s` }}>
-                <Svg icon={byName[n]} look={{ variant: 'iso' }} size={size} className="drop-shadow-[0_24px_24px_rgba(20,24,18,.10)]" />
+                <Chip icon={byName[n]} size={size} className="rotate-[-4deg]" />
               </div></div>
             </motion.div>
           </div>
@@ -69,10 +78,10 @@ function Hero({ go }: { go: (p: string) => void }) {
         </motion.a>
         <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mt-7 text-[52px] leading-[0.98] font-semibold tracking-[-0.03em] sm:text-7xl lg:text-[104px]">
-          Icons in every <span className="spectrum">dimension.</span>
+          Icons that make <span className="spectrum">money look good.</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }} className="mt-7 max-w-2xl text-lg text-ink/65 sm:text-xl">
-          One drawing becomes line, solid, colour and layered isometric 3D, still or in motion. Built for SaaS, finance and crypto products.
+          One drawing becomes line, solid and colour, still or in motion. Built for SaaS, finance and crypto products.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.6 }} className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <button onClick={() => go('/icons')} className="group inline-flex items-center gap-2 rounded-2xl border border-lime-deep/30 bg-lime px-6 py-3.5 text-base font-semibold text-ink shadow-[inset_0_-3px_0_rgba(0,0,0,.08),0_10px_30px_-10px_rgba(79,154,23,.6)] transition hover:-translate-y-0.5 hover:brightness-95">
@@ -117,14 +126,14 @@ function Playground() {
   const visible = useVisible(ref);
   const icons = useMemo(() => pick(PLAY_ICONS), []);
   const [icon, setIcon] = useState(icons[0]);
-  const [look, setLook] = useState<Look>({ variant: 'iso', animated: true, palette: 'spectrum', strokeWidth: 1.5 });
+  const [look, setLook] = useState<Look>({ variant: 'color', animated: true, palette: 'spectrum', strokeWidth: 1.5 });
   const [touched, setTouched] = useState(false);
   const set = (p: Partial<Look>) => { setTouched(true); setLook((l) => ({ ...l, ...p })); };
   // until someone touches a control, tour the four styles
   useEffect(() => {
     if (touched || !visible) return;
-    const order: Variant[] = ['line', 'solid', 'color', 'iso'];
-    const t = setInterval(() => setLook((l) => ({ ...l, variant: order[(order.indexOf(l.variant) + 1) % 4] })), 2200);
+    const order: Variant[] = ['line', 'solid', 'color'];
+    const t = setInterval(() => setLook((l) => ({ ...l, variant: order[(order.indexOf(l.variant) + 1) % 3] })), 2200);
     return () => clearInterval(t);
   }, [touched, visible]);
   const mono = look.variant === 'line' || look.variant === 'solid';
@@ -133,14 +142,14 @@ function Playground() {
   return (
     <section className="mx-auto max-w-[1400px] px-4 py-24 sm:px-6">
       <motion.div {...rise} className="mx-auto max-w-3xl text-center">
-        <TextAnimate text="One drawing. Four dimensions." type="rollIn" className="m-0 p-0 pb-0 text-4xl font-semibold tracking-tight text-ink sm:text-6xl dark:text-ink" />
-        <p className="mt-4 text-lg text-ink/60">Every icon is a single set of shapes with roles. The renderer turns them into strokes, fills, gradients or layered 3D glass, so the styles never drift apart. Try it.</p>
+        <TextAnimate text="One drawing. Every style." type="rollIn" className="m-0 p-0 pb-0 text-4xl font-semibold tracking-tight text-ink sm:text-6xl dark:text-ink" />
+        <p className="mt-4 text-lg text-ink/60">Every icon is a single set of shapes with roles. The renderer turns them into strokes, fills or gradients, so the styles never drift apart. Try it.</p>
       </motion.div>
       <motion.div {...rise} ref={ref} className="mt-12 grid overflow-hidden rounded-[32px] border bg-white shadow-[0_40px_120px_-50px_rgba(20,24,18,.35)] lg:grid-cols-[1.25fr_1fr]">
         <div className={cn('dots relative flex min-h-[420px] items-center justify-center bg-band text-ink [--bri-knockout:#f7f8f5]', !visible && 'paused')}>
           <AnimatePresence mode="popLayout">
             <motion.div key={`${icon.name}-${look.variant}`} initial={{ opacity: 0, scale: 0.7, filter: 'blur(12px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} exit={{ opacity: 0, scale: 1.15, filter: 'blur(12px)' }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-              <Svg icon={icon} look={look} size={look.variant === 'iso' ? 360 : 210} />
+              <Svg icon={icon} look={look} size={220} />
             </motion.div>
           </AnimatePresence>
           <span className="absolute top-5 left-5 rounded-full bg-white px-3 py-1 font-mono text-xs text-ink/60 shadow-sm">{icon.name}</span>
@@ -204,20 +213,22 @@ function Bento() {
             </div>
           </Cell>
           <Cell className="bg-gradient-to-br from-[#efeaff] to-[#e2f6ff] md:col-span-2">
-            <p className="text-2xl font-semibold">Glossy 3D</p>
-            <p className="mt-1 text-ink/60">Thin glass layers, floating accents.</p>
-            <div className="mt-2 flex justify-center"><LiveSvg icon={byName['vault']} look={{ variant: 'iso', animated: true }} size={210} /></div>
+            <p className="text-2xl font-semibold">Any palette</p>
+            <p className="mt-1 text-ink/60">Eight presets or any hue you pick.</p>
+            <div className="mt-6 grid grid-cols-4 gap-2">
+              {PRESET_SWATCHES.map((p) => <div key={p.id} className="flex aspect-square items-center justify-center rounded-2xl bg-white/80"><Svg icon={byName['vault']} look={{ variant: 'color', palette: p.id as Look['palette'] }} size={34} /></div>)}
+            </div>
           </Cell>
           <Cell className="md:col-span-2">
             <p className="text-6xl font-semibold tracking-tight tabular-nums"><RollingNumber value={TOTAL} /></p>
             <p className="mt-1 text-ink/60">unique drawings. No filler, no badge copies.</p>
-            <p className="mt-6 text-4xl font-semibold tracking-tight tabular-nums text-ink/35"><RollingNumber value={TOTAL * 8} /></p>
-            <p className="mt-1 text-ink/60">ready-made SVGs across 8 styles.</p>
+            <p className="mt-6 text-4xl font-semibold tracking-tight tabular-nums text-ink/35"><RollingNumber value={TOTAL * 6} /></p>
+            <p className="mt-1 text-ink/60">ready-made SVGs across 6 styles.</p>
           </Cell>
           <Cell className="bg-ink text-white md:col-span-2">
             <p className="text-2xl font-semibold">Crypto-native</p>
             <p className="mt-1 text-white/60">Sequencers, fraud proofs, perps, liquidity bins. Drawn by people who run a chain.</p>
-            <div className="mt-5 grid grid-cols-3">{chainIcons.map((i) => <LiveSvg key={i.name} icon={i} look={{ variant: 'iso' }} size={84} />)}</div>
+            <div className="mt-6 grid grid-cols-3 gap-2">{chainIcons.map((i) => <div key={i.name} className="flex aspect-square items-center justify-center rounded-2xl bg-white/[.06] ring-1 ring-white/10"><Svg icon={i} look={{ variant: 'color' }} size={36} /></div>)}</div>
           </Cell>
           <Cell className="bg-lime md:col-span-2">
             <p className="text-2xl font-semibold">Free. Forever.</p>
@@ -246,10 +257,10 @@ function Collections({ go }: { go: (p: string) => void }) {
               <span><span className="block text-3xl font-semibold">{g.label}</span><span className="text-ink/50">{fmt(g.cats.reduce((n, c) => n + c.icons.length, 0))} icons</span></span>
               <span className="flex size-10 items-center justify-center rounded-full border bg-white transition group-hover:bg-ink group-hover:text-white"><ArrowUpRight className="size-4" /></span>
             </button>
-            <div className="my-3 flex justify-between">
+            <div className="my-6 flex justify-between">
               {g.cats.slice(0, 5).map((c, k) => (
                 <div key={c.id} className="transition duration-300 group-hover:-translate-y-2" style={{ transitionDelay: `${k * 40}ms` }}>
-                  <LiveSvg icon={c.icons[0]} look={{ variant: 'iso' }} size={104} />
+                  <Chip icon={c.icons[0]} size={72} />
                 </div>
               ))}
             </div>
@@ -276,8 +287,8 @@ function Closing({ go }: { go: (p: string) => void }) {
           <button onClick={() => go('/icons')} className="inline-flex items-center gap-2 rounded-2xl bg-lime px-6 py-3.5 font-semibold text-ink transition hover:-translate-y-0.5">Browse the library <ArrowRight className="size-4" /></button>
           <a href="/bridle-svg.zip" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-6 py-3.5 font-semibold transition hover:bg-white/10"><Download className="size-4" />Download .zip</a>
         </div>
-        <div className="relative mt-10 -mb-6 flex justify-center">
-          {row.map((i, k) => <div key={i.name} className={cn(k > 3 && 'hidden sm:block', k > 5 && 'sm:hidden lg:block')}><LiveSvg icon={i} look={{ variant: 'iso', animated: true }} size={150} /></div>)}
+        <div className="relative mt-12 flex justify-center">
+          {row.map((i, k) => <div key={i.name} className={cn('hero-float px-2 pb-12', k > 3 && 'hidden sm:block', k > 5 && 'sm:hidden lg:block')} style={{ animationDelay: `${-k * 0.6}s` }}><Chip icon={i} size={96} animated /></div>)}
         </div>
       </motion.div>
     </section>

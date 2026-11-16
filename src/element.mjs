@@ -1,4 +1,4 @@
-// <bridle-icon name="wallet" variant="iso" animated size="64" hue="200"></bridle-icon>
+// <bridle-icon name="wallet" variant="color" animated size="32" hue="200"></bridle-icon>
 import { byName } from './index.mjs';
 import { renderSvg } from './render.mjs';
 

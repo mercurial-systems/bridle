@@ -1,4 +1,4 @@
-// Bridle renderer: one icon definition -> line | solid | color | iso SVG, static or animated.
+// Bridle renderer: one icon definition -> line | solid | color SVG, static or animated.
 // Pure string output, no DOM, no dependencies: runs in Node (build), browsers (site) and React.
 
 // name: [keyframes, timing, transform-origin]
@@ -41,8 +41,6 @@ const ANIMS = {
   wink: ['0%,88%,100%{transform:scaleY(1)}94%{transform:scaleY(.08)}', '3.6s ease-in-out infinite', 'center'],
   flicker: ['0%,100%{transform:scale(1,1) skewX(0)}25%{transform:scale(1.04,.94) skewX(2deg)}50%{transform:scale(.97,1.07) skewX(-2deg)}75%{transform:scale(1.02,.97) skewX(1deg)}', '1.2s ease-in-out infinite', 'bottom'],
 };
-// iso-only motion for the whole tile
-const HOVER = ['0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}', '3.4s ease-in-out infinite'];
 
 export const ANIM_NAMES = Object.keys(ANIMS);
 
@@ -174,7 +172,7 @@ const inside = (a, b) => a && b && a[0] >= b[0] - 0.05 && a[1] >= b[1] - 0.05 &&
 const meets = (a, b) => a && b && a[0] < b[2] + 1.5 && b[0] < a[2] + 1.5 && a[1] < b[3] + 1.5 && b[1] < a[3] + 1.5;
 
 // Which details sit on top of a body (drawn dark) versus over empty space (drawn light)? Decided once per icon from
-// bounding boxes, so colour and iso need no <mask>: masks re-rasterise every frame when anything inside them moves.
+// bounding boxes, so colour needs no <mask>: masks re-rasterise every frame when anything inside them moves.
 const ON_BODY = new WeakMap();
 function onBody(icon) {
   let m = ON_BODY.get(icon);
@@ -206,14 +204,14 @@ let counter = 0;
 const ROUND = { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
 
 /**
- * renderSvg(icon, { variant: 'line'|'solid'|'color'|'iso', animated, palette, strokeWidth, size, uid, title })
+ * renderSvg(icon, { variant: 'line'|'solid'|'color', animated, palette, strokeWidth, size, uid, title })
  */
 export function renderSvg(icon, opt = {}) {
-  const variant = opt.variant || 'line';
+  const variant = VARIANTS.includes(opt.variant) ? opt.variant : 'line';
   const sw = opt.strokeWidth ?? 1.5;
   const uid = opt.uid || `bri-${icon.name}-${(++counter).toString(36)}`;
   const ctx = { anim: !!opt.animated, used: new Set(), sw };
-  const size = opt.size ?? (variant === 'iso' ? 64 : 24);
+  const size = opt.size ?? 24;
   const title = opt.title === false ? '' : `<title>${esc(opt.title || icon.name.replace(/-/g, ' '))}</title>`;
   const head = (vb, extra = {}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${size}"${attrs(extra)} role="img">${title}`;
   const isShape = (r) => r === 'b' || r === 'a';
@@ -269,11 +267,10 @@ export function renderSvg(icon, opt = {}) {
 
   // details sit dark on top of bodies and light where they cross empty space (see onBody)
   const ob = onBody(icon);
-  // innerWidth: optional thinner stroke for details engraved on a body (iso uses chunky ribbons elsewhere)
-  const split = (inner, lone, innerWidth) => draw(icon.els, (r, e) => {
+  const split = (inner, lone) => draw(icon.els, (r, e) => {
     if (r !== 'd' && r !== 'f') return null;
-    const on = ob.get(e), c = on ? inner : lone;
-    return r === 'f' ? { fill: c, stroke: 'none' } : { fill: 'none', stroke: c, 'stroke-width': on && innerWidth ? innerWidth : null };
+    const c = ob.get(e) ? inner : lone;
+    return r === 'f' ? { fill: c, stroke: 'none' } : { fill: 'none', stroke: c };
   }, ctx);
   const grad = (id, a, b, ex = '') => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"${ex}><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
 
@@ -285,69 +282,6 @@ export function renderSvg(icon, opt = {}) {
     return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + defs + body + '</svg>';
   }
 
-  // ---- iso: thin layered glass plates standing in isometric space, accents floating in front; viewBox 64 ----
-  {
-    const up = opt.iso !== 'flat'; // default: upright extruded object; 'flat' lays it in the ground plane
-    const S = 1.36, oy = 31 - 12 * 1.36;           // flat: glyph grid 0..24 maps to a 56 px diamond centred at (32, 31)
-    const U = 1.3;                                  // upright: front face sheared onto the right-facing plane
-    const ux = 32 - 0.866 * U * 12 - 0.5, uy = 31.5 - U * 12 - 0.5 * U * 12;
-    const M = (dy = 0) => up
-      ? `matrix(${0.866 * U} ${0.5 * U} 0 ${U} ${(ux + 0.866 * U * dy * 0.62).toFixed(2)} ${(uy - 0.5 * U * dy * 0.62).toFixed(2)})`
-      : `matrix(${0.866 * S} ${0.5 * S} ${-0.866 * S} ${0.5 * S} 32 ${(oy + dy).toFixed(2)})`;
-    const gw = Math.max(sw, 1.5) * 1.12;            // close to the flat stroke weight: fine, not chunky
-    ctx.sw = gw;
-    // Layered glass: each top-level unit is a thin plate. Bodies sit on the base plane; pure-accent units float in
-    // front of it, so depth comes from separation and soft edges rather than from thick blocks.
-    const D = 2.2, LIFT = 3.4, step = (opt.size ?? 64) >= 160 && !opt.animated ? 0.55 : 1.1;
-    const G = (dy, inner) => `<g transform="${M(dy)}" stroke-width="${gw.toFixed(2)}"${attrs(ROUND)}>${inner}</g>`;
-    const sideB = `url(#${uid}sb)`, sideA = `url(#${uid}sa)`;
-    const has = (e, r) => (e.t === 'g' ? e.els.some((x) => has(x, r)) : e.r === r && !(r === 'a' && e.t === 'path' && !/z\s*$/i.test(e.d)));
-    const sidePaint = (r, e) => (r === 'h' || ((r === 'd' || r === 'f') && ob.get(e)) ? null
-      : r === 'a' ? { fill: sideA, stroke: sideA } : r === 'A' ? { fill: 'none', stroke: sideA }
-      : r === 'b' ? { fill: sideB, stroke: sideB } : r === 'f' ? { fill: sideB, stroke: 'none' } : { fill: 'none', stroke: sideB });
-    const topPaint = (r, e) => {
-      if (r === 'b') return { fill: `url(#${uid}g)`, stroke: `url(#${uid}e)` };
-      if (r === 'a') return { fill: `url(#${uid}a)`, stroke: p.al, 'stroke-width': +(gw * 0.7).toFixed(2) };
-      if (r === 'A') return { fill: 'none', stroke: `url(#${uid}a)` };
-      if (r === 'h') return { fill: 'none', stroke: '#fff', 'stroke-opacity': '.95' };
-      const on = ob.get(e), c = on ? p.d : `url(#${uid}e)`;
-      return r === 'f' ? { fill: on ? p.d : p.m, stroke: 'none' } : { fill: 'none', stroke: c, 'stroke-width': on ? +(gw * 0.82).toFixed(2) : null };
-    };
-    let glyph = '';
-    const anyBody = icon.els.some((u) => has(u, 'b'));
-    // sheen and contact shadows are invisible on small layered tiles and cost paint time in big grids
-    const fine = !(opt.layer && (opt.size ?? 64) < 120);
-    for (const u of icon.els) {
-      const lifted = has(u, 'a') && !has(u, 'b');
-      const z = lifted ? -LIFT : 0;
-      // a floating accent casts a soft contact shadow onto the plate behind it
-      if (fine && lifted && anyBody) glyph += G(0.35, draw([u], (r) => (r === 'a' ? { fill: p.dd, stroke: p.dd, opacity: '.16' } : null), ctx));
-      const ext = draw([u], sidePaint, ctx);
-      if (ext) for (let k = D; k > 0.01; k -= step) glyph += G(z + k, ext);
-      glyph += G(z, draw([u], topPaint, ctx));
-      // glass sheen: a diagonal white sweep across each body face
-      if (fine && has(u, 'b')) glyph += G(z, draw([u], (r) => (r === 'b' ? { fill: `url(#${uid}w)`, stroke: 'none' } : null), ctx));
-    }
-    const shadow = up ? `<ellipse cx="33" cy="56.5" rx="19" ry="5" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
-    const ah = (p.a.match(/hsl\((\d+)/) || [0, 0])[1], h = (p.m.match(/hsl\((\d+)/) || [0, 0])[1];
-    // side gradients run across the object in screen space: lit left faces, shaded right faces
-    const side = (id, c1, c2) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${up ? 0 : 24}" x2="24" y2="${up ? 24 : 0}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
-    const defs = `<defs>` +
-      `<linearGradient id="${uid}g" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="${p.l}"/><stop offset="1" stop-color="hsl(${h} 95% 76%)"/></linearGradient>` +
-      `<linearGradient id="${uid}w" gradientUnits="userSpaceOnUse" x1="3" y1="3" x2="17" y2="19"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".32" stop-color="#fff" stop-opacity=".18"/><stop offset=".33" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
-      `<linearGradient id="${uid}e" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="hsl(${h} 95% 74%)"/><stop offset="1" stop-color="${p.s}"/></linearGradient>` +
-      `<linearGradient id="${uid}a" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="${p.al}"/><stop offset="1" stop-color="${p.a}"/></linearGradient>` +
-      side(uid + 'sb', `hsl(${h} 85% 60%)`, `hsl(${h} 72% 40%)`) + side(uid + 'sa', `hsl(${ah} 88% 54%)`, `hsl(${ah} 78% 38%)`) +
-      `<radialGradient id="${uid}q"><stop offset="0" stop-color="${p.dd}" stop-opacity=".26"/><stop offset=".6" stop-color="${p.dd}" stop-opacity=".08"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient></defs>`;
-    // opt.layer splits the icon for compositing: 'base' = shadow, 'glyph' = object without its float, so a page can
-    // float the object with a GPU transform instead of repainting the whole SVG each frame.
-    if (opt.layer === 'base') return head('0 0 64 64', { fill: 'none' }) + defs + shadow + '</svg>';
-    if (opt.layer === 'glyph') return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used) + defs + glyph + '</svg>';
-    const A = ctx.anim;
-    const extra = A ? `@keyframes bri-hover{${HOVER[0]}}` : '';
-    return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used, extra) + defs + shadow + `<g${A ? ` style="animation:bri-hover ${HOVER[1]}"` : ''}>${glyph}</g></svg>`;
-  }
-
 }
 
-export const VARIANTS = ['line', 'solid', 'color', 'iso'];
+export const VARIANTS = ['line', 'solid', 'color'];

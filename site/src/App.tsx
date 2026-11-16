@@ -59,7 +59,7 @@ const Tile = memo(function Tile({ icon, look, onOpen, size }: { icon: Icon; look
   const [hover, setHover] = useState(false);
   return (
     <button onClick={() => onOpen(icon)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} title={icon.name}
-      className={cn('tile group relative flex aspect-square items-center justify-center rounded-lg bg-tile text-ink transition-colors hover:bg-[#e9eae4]', look.variant === 'iso' && 'rounded-xl')}>
+      className={cn('tile group relative flex aspect-square items-center justify-center rounded-lg bg-tile text-ink transition-colors hover:bg-[#e9eae4]')}>
       <LiveSvg icon={icon} look={look} hover={hover} size={size} />
       <span className="pointer-events-none absolute inset-x-1 bottom-1 truncate text-center text-[10px] text-ink/55 opacity-0 transition group-hover:opacity-100">{icon.name}</span>
     </button>
@@ -95,7 +95,6 @@ function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => 
     history.replaceState(null, '', u);
   }, [group, cat, dq]);
   const mono = look.variant === 'line' || look.variant === 'solid';
-  const iso = look.variant === 'iso';
   const set = (p: Partial<Look>) => setLook({ ...look, ...p });
   const sub = activeGroup?.cats.find((c) => c.id === cat);
   const catLabel = activeGroup ? (sub ? <>{activeGroup.label} <span className="text-ink/35">/ {sub.short}</span></> : activeGroup.label) : 'All icons';
@@ -178,8 +177,8 @@ function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => 
             <p className="text-sm text-ink/50">{fmt(list.length)} icons{dq && ` for “${dq}”`}</p>
           </div>
           <p className="mt-1 mb-5 text-sm text-ink/55">Click any icon to copy it as SVG, React or a URL, or download a PNG.</p>
-          <div className={cn('grid gap-2', iso ? 'grid-cols-[repeat(auto-fill,minmax(104px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(68px,1fr))]')}>
-            {shown.map((i) => <Tile key={i.name} icon={i} look={look} onOpen={onOpen} size={iso ? 88 : 28} />)}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(68px,1fr))] gap-2">
+            {shown.map((i) => <Tile key={i.name} icon={i} look={look} onOpen={onOpen} size={28} />)}
           </div>
           {limit < list.length && <div ref={sentinel} className="py-10 text-center text-sm text-ink/45">Loading more…</div>}
           {!list.length && <p className="py-24 text-center text-ink/55">No icons match “{q}”. Try a broader word like “card”, “chart” or “token”.</p>}
@@ -195,7 +194,7 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
   const sid = styleId(look);
   const pal = typeof look.palette === 'number' ? ` palette={${look.palette}}` : look.palette && look.palette !== 'spectrum' ? ` palette="${look.palette}"` : '';
   const sw = (look.variant === 'line' || look.variant === 'solid') && look.strokeWidth !== 1.5 ? ` strokeWidth={${look.strokeWidth}}` : '';
-  const jsx = `<BridleIcon name="${icon.name}" variant="${look.variant}"${look.animated ? ' animated' : ''}${pal}${sw} size={${look.variant === 'iso' ? 64 : 24}} />`;
+  const jsx = `<BridleIcon name="${icon.name}" variant="${look.variant}"${look.animated ? ' animated' : ''}${pal}${sw} size={24} />`;
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     addEventListener('keydown', k);
@@ -215,13 +214,13 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
           <button onClick={onClose} className="rounded-lg border p-2 text-ink/60 hover:bg-tile" aria-label="Close"><X className="size-4" /></button>
         </div>
         <div className="dots mt-6 flex h-72 items-center justify-center rounded-2xl border bg-band text-ink [--bri-knockout:#f7f8f5]">
-          <Svg icon={icon} look={{ ...look, animated: true }} size={look.variant === 'iso' ? 240 : 140} />
+          <Svg icon={icon} look={{ ...look, animated: true }} size={140} />
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
           {STYLE_LIST.map((s) => (
             <button key={s.id} onClick={() => setLook({ ...look, variant: s.variant, animated: s.animated })} title={s.label}
               className={cn('flex flex-col items-center gap-1 rounded-xl border p-2 text-ink transition hover:bg-band', s.id === sid && 'border-lime-deep/50 bg-lime/25')}>
-              <Svg icon={icon} look={{ ...look, variant: s.variant, animated: false }} size={s.variant === 'iso' ? 50 : 26} />
+              <Svg icon={icon} look={{ ...look, variant: s.variant, animated: false }} size={26} />
               <span className="text-[10px] text-ink/55">{s.label}</span>
             </button>
           ))}
@@ -236,7 +235,7 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
           <CodeBlock tabs={[
             { label: 'React', language: 'tsx', code: `import { BridleIcon } from 'bridle-icons/react';\n\n${jsx}` },
             { label: 'Web component', language: 'html', code: `<script type="module" src="${SITE}/bridle.js"></script>\n\n<bridle-icon name="${icon.name}" variant="${look.variant}"${look.animated ? ' animated' : ''}${typeof look.palette === 'number' ? ` hue="${look.palette}"` : look.palette && look.palette !== 'spectrum' ? ` palette="${look.palette}"` : ''}></bridle-icon>` },
-            { label: 'URL', language: 'html', code: `<img src="${SITE}/svg/${sid}/${icon.name}.svg" width="${look.variant === 'iso' ? 64 : 24}" alt="${icon.name.replace(/-/g, ' ')}" />` },
+            { label: 'URL', language: 'html', code: `<img src="${SITE}/svg/${sid}/${icon.name}.svg" width="24" alt="${icon.name.replace(/-/g, ' ')}" />` },
             { label: 'SVG', language: 'xml', code: file },
           ]} />
         </div>
@@ -248,10 +247,10 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
 /* ---------------------------------------------------------------- docs */
 function Usage() {
   const tabs = [
-    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                      // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="iso" palette="ocean" size={96} />\n<BridleIcon name="invoice" variant="solid" strokeWidth={2} />`} language="tsx" /> },
-    { id: 1, label: 'Web component', content: <CodeBlock code={`<script type="module" src="${SITE}/bridle.js"></script>\n\n<bridle-icon name="bank"></bridle-icon>\n<bridle-icon name="swap" variant="color" animated></bridle-icon>\n<bridle-icon name="block" variant="iso" animated size="96" hue="180"></bridle-icon>`} language="html" /> },
+    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                      // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="color" palette="ocean" size={48} />\n<BridleIcon name="invoice" variant="solid" strokeWidth={2} />`} language="tsx" /> },
+    { id: 1, label: 'Web component', content: <CodeBlock code={`<script type="module" src="${SITE}/bridle.js"></script>\n\n<bridle-icon name="bank"></bridle-icon>\n<bridle-icon name="swap" variant="color" animated></bridle-icon>\n<bridle-icon name="block" variant="color" animated size="48" hue="180"></bridle-icon>`} language="html" /> },
     { id: 2, label: 'Plain SVG', content: <CodeBlock code={`<img src="${SITE}/svg/color-animated/rocket.svg" width="32" alt="rocket" />\n<svg width="24" height="24"><use href="${SITE}/bridle-line.svg#wallet" /></svg>\n\n${SITE}/bridle-svg.zip   // every icon, every style\n${SITE}/icons.json       // names, tags, categories`} language="html" /> },
-    { id: 3, label: 'JavaScript', content: <CodeBlock code={`import { svg, ICONS } from 'bridle-icons';\n\nel.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });\nconst coin = svg('token', { variant: 'iso', animated: true, palette: [42, 210] });\nconsole.log(ICONS.length); // ${TOTAL}`} language="js" /> },
+    { id: 3, label: 'JavaScript', content: <CodeBlock code={`import { svg, ICONS } from 'bridle-icons';\n\nel.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });\nconst coin = svg('token', { variant: 'color', animated: true, palette: [42, 210] });\nconsole.log(ICONS.length); // ${TOTAL}`} language="js" /> },
   ];
   return (
     <section className="mx-auto grid max-w-[1400px] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.3fr]">
@@ -261,7 +260,7 @@ function Usage() {
         <ul className="mt-8 grid gap-3 sm:grid-cols-2">
           {[
             ['24 px grid', '2 px safe area, 1.5 stroke, round caps. Line and solid inherit your text colour.'],
-            ['One drawing, eight styles', 'Body, accent and detail roles drive every style, so they never drift apart.'],
+            ['One drawing, six styles', 'Body, accent and detail roles drive every style, so they never drift apart.'],
             ['Motion that stays smooth', 'Transform and opacity keyframes only, no animated masks, paused offscreen, honours reduced-motion.'],
             ['Mark-free crypto', 'Abstract glyphs only: no chain or token logos, safe to ship anywhere.'],
           ].map(([t, d]) => (
@@ -296,7 +295,7 @@ export default function App() {
   const [look, setLook] = useState<Look>(() => {
     const p = new URLSearchParams(location.search);
     const v = p.get('s') as Variant | null;
-    return { variant: v && ['line', 'solid', 'color', 'iso'].includes(v) ? v : 'line', animated: p.get('m') === '1', palette: 'spectrum', strokeWidth: 1.5 };
+    return { variant: v && ['line', 'solid', 'color'].includes(v) ? v : 'line', animated: p.get('m') === '1', palette: 'spectrum', strokeWidth: 1.5 };
   });
   useEffect(() => {
     if (!location.pathname.startsWith('/icons')) return;

@@ -1,6 +1,6 @@
 import type { IconName } from './names';
 export type { IconName };
-export type Variant = 'line' | 'solid' | 'color' | 'iso';
+export type Variant = 'line' | 'solid' | 'color';
 export interface Palette { l: string; m: string; d: string; dd: string; a: string; ad: string; al: string; s: string; as: string; k: string }
 export interface RenderOptions {
   variant?: Variant;
@@ -11,8 +11,6 @@ export interface RenderOptions {
   size?: number;
   title?: string | false;
   uid?: string;
-  /** iso only: render just the tile ('base') or just the glyph without its float ('glyph'), for layered compositing */
-  layer?: 'base' | 'glyph';
 }
 export interface Icon { name: IconName; tags: string[]; cat: string; els: unknown[] }
 export const ICONS: Icon[];

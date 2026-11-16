@@ -6,7 +6,7 @@ export const groupOf = (cat: string) => GROUPS.find((g) => g.cats.some((c) => c.
 export type { Icon, Variant };
 
 export type Style = { variant: Variant; animated: boolean };
-export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number; layer?: 'base' | 'glyph' };
+export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number };
 
 export const STYLE_LIST: { id: string; label: string; variant: Variant; animated: boolean }[] = [
   { id: 'line', label: 'Line', variant: 'line', animated: false },
@@ -15,8 +15,6 @@ export const STYLE_LIST: { id: string; label: string; variant: Variant; animated
   { id: 'solid-animated', label: 'Solid · motion', variant: 'solid', animated: true },
   { id: 'color', label: 'Colour', variant: 'color', animated: false },
   { id: 'color-animated', label: 'Colour · motion', variant: 'color', animated: true },
-  { id: 'iso', label: 'Isometric 3D', variant: 'iso', animated: false },
-  { id: 'iso-animated', label: 'Isometric · motion', variant: 'iso', animated: true },
 ];
 export const styleId = (s: Style) => (s.animated ? `${s.variant}-animated` : s.variant);
 
