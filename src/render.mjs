@@ -315,16 +315,18 @@ export function renderSvg(icon, opt = {}) {
     };
     let glyph = '';
     const anyBody = icon.els.some((u) => has(u, 'b'));
+    // sheen and contact shadows are invisible on small layered tiles and cost paint time in big grids
+    const fine = !(opt.layer && (opt.size ?? 64) < 120);
     for (const u of icon.els) {
       const lifted = has(u, 'a') && !has(u, 'b');
       const z = lifted ? -LIFT : 0;
       // a floating accent casts a soft contact shadow onto the plate behind it
-      if (lifted && anyBody) glyph += G(0.35, draw([u], (r) => (r === 'a' ? { fill: p.dd, stroke: p.dd, opacity: '.16' } : null), ctx));
+      if (fine && lifted && anyBody) glyph += G(0.35, draw([u], (r) => (r === 'a' ? { fill: p.dd, stroke: p.dd, opacity: '.16' } : null), ctx));
       const ext = draw([u], sidePaint, ctx);
       if (ext) for (let k = D; k > 0.01; k -= step) glyph += G(z + k, ext);
       glyph += G(z, draw([u], topPaint, ctx));
       // glass sheen: a diagonal white sweep across each body face
-      if (has(u, 'b')) glyph += G(z, draw([u], (r) => (r === 'b' ? { fill: `url(#${uid}w)`, stroke: 'none' } : null), ctx));
+      if (fine && has(u, 'b')) glyph += G(z, draw([u], (r) => (r === 'b' ? { fill: `url(#${uid}w)`, stroke: 'none' } : null), ctx));
     }
     const shadow = up ? `<ellipse cx="33" cy="56.5" rx="19" ry="5" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
     const ah = (p.a.match(/hsl\((\d+)/) || [0, 0])[1], h = (p.m.match(/hsl\((\d+)/) || [0, 0])[1];
