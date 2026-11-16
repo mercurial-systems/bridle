@@ -156,7 +156,7 @@ const STYLE_CARDS: { variant: Variant; title: string; sub: string; bg: string }[
   { variant: 'line', title: 'Line', sub: '1.5 stroke', bg: '#f3f1ec' },
   { variant: 'solid', title: 'Solid', sub: 'Knock-out details', bg: '#eef3f8' },
   { variant: 'color', title: 'Colour', sub: 'Gradient duotone', bg: '#f8eeee' },
-  { variant: 'iso', title: 'Isometric', sub: 'Extruded 3D', bg: '#f1effa' },
+  { variant: 'iso', title: 'Isometric', sub: 'Glossy 3D objects', bg: '#f1effa' },
 ];
 
 function StyleCard({ c }: { c: (typeof STYLE_CARDS)[number] }) {
@@ -426,7 +426,7 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
 /* ---------------------------------------------------------------- docs */
 function Usage() {
   const tabs = [
-    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                      // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="iso" palette="ocean" size={96} />\n<BridleIcon name="wallet-check" variant="solid" />       // status variants`} language="tsx" /> },
+    { id: 0, label: 'React', content: <CodeBlock code={`npm i github:mercurial-systems/bridle\n\nimport { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="crypto-wallet" />                      // line, inherits text colour\n<BridleIcon name="credit-card" variant="color" animated />\n<BridleIcon name="vault" variant="iso" palette="ocean" size={96} />\n<BridleIcon name="invoice" variant="solid" strokeWidth={2} />`} language="tsx" /> },
     { id: 1, label: 'Web component', content: <CodeBlock code={`<script type="module" src="${SITE}/bridle.js"></script>\n\n<bridle-icon name="bank"></bridle-icon>\n<bridle-icon name="swap" variant="color" animated></bridle-icon>\n<bridle-icon name="block" variant="iso" animated size="96" hue="180"></bridle-icon>`} language="html" /> },
     { id: 2, label: 'Plain SVG', content: <CodeBlock code={`<img src="${SITE}/svg/color-animated/rocket.svg" width="32" alt="rocket" />\n<svg width="24" height="24"><use href="${SITE}/bridle-line.svg#wallet" /></svg>\n\n${SITE}/bridle-svg.zip   // every icon, every style\n${SITE}/icons.json       // names, tags, categories`} language="html" /> },
     { id: 3, label: 'JavaScript', content: <CodeBlock code={`import { svg, ICONS } from 'bridle-icons';\n\nel.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });\nconst coin = svg('token', { variant: 'iso', animated: true, palette: [42, 210] });\nconsole.log(ICONS.length); // ${TOTAL}`} language="js" /> },

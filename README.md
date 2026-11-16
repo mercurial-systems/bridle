@@ -1,7 +1,7 @@
 # Bridle
 
 Next-gen open icons for SaaS, business, finance, banking, payments and crypto.
-3,300+ original icons across 29 categories, each drawn once on a 24 px grid and rendered in eight styles:
+3,317 original, individually designed icons in 4 collections (Crypto, Finance, Business, Product & Tech) and 46 subcategories, each drawn once on a 24 px grid and rendered in eight styles:
 
 | style | file folder | notes |
 | --- | --- | --- |
@@ -13,14 +13,7 @@ Next-gen open icons for SaaS, business, finance, banking, payments and crypto.
 
 Browse, customise and download at **https://bridle.verity.dev**.
 
-Categories: SaaS & Product, Business & Operations, Corporate & Work, Finance, Banking, Cards & Payments, Crypto & Web3,
-Chain Infrastructure, Onchain Trading, DeFi & Web3 Ops, Interface & Navigation, Communication & Media, Devices &
-Development, Commerce & Logistics, Markets & Accounting, People & Workplace, Files Data & Security, Marketing & Growth,
-AI & Automation, Travel & Expenses, Property & Facilities, Legal & Compliance, Customer Support, Payments & Fintech,
-Wealth & Insurance, NFTs Gaming & Metaverse, Sustainability & ESG, Productivity & Editing, Maps & Location.
-
-Status variants (`wallet-check`, `invoice-clock`, `block-shield`, …) are generated from 67 base icons and 20 badges
-(`src/families.mjs`), so they always match their base drawing.
+Collections and subcategories are listed in `GROUPS` (`src/index.mjs`) and in `icons.json`.
 
 Static files on the site cover line, solid, colour, iso, colour-animated and iso-animated (Cloudflare Pages caps a deploy
 at 20,000 files). Line and solid motion come from the zip, the renderer, React and the web component.

@@ -43,7 +43,6 @@ const ANIMS = {
 };
 // iso-only motion for the whole tile
 const HOVER = ['0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}', '3.4s ease-in-out infinite'];
-const SHADOW = ['0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(.86);opacity:.32}', '3.4s ease-in-out infinite'];
 
 export const ANIM_NAMES = Object.keys(ANIMS);
 
@@ -55,6 +54,7 @@ export function paletteFromHue(h, ah = h + 150) {
 export const CATEGORY_HUES = {
   saas: [262, 322], business: [22, 200], corporate: [186, 10], finance: [152, 44], banking: [222, 42], cards: [332, 268], crypto: [268, 178],
   interface: [240, 330], communication: [200, 28], devices: [212, 160], commerce: [12, 190], markets: [168, 38], defi: [288, 172], people: [32, 250], data: [196, 280], chain: [250, 160], trading: [275, 135],
+  wallets: [265, 190], tokens: [280, 45], explorer: [235, 170], governance: [295, 150], lending: [160, 30], treasury: [140, 260], tax: [175, 330], everyday: [215, 40], manufacturing: [20, 210], hospitality: [8, 170], education: [45, 250], events: [330, 200], mobility: [195, 20], media: [320, 180], cloud: [205, 285], weather: [195, 45], social: [340, 210],
   marketing: [300, 40], ai: [258, 190], travel: [196, 24], property: [30, 205], legal: [225, 45], support: [170, 330], payments: [145, 265], wealth: [46, 215], gaming: [310, 165], esg: [130, 48], productivity: [218, 350], location: [350, 200],
 };
 export const PRESETS = {
@@ -269,10 +269,11 @@ export function renderSvg(icon, opt = {}) {
 
   // details sit dark on top of bodies and light where they cross empty space (see onBody)
   const ob = onBody(icon);
-  const split = (inner, lone) => draw(icon.els, (r, e) => {
+  // innerWidth: optional thinner stroke for details engraved on a body (iso uses chunky ribbons elsewhere)
+  const split = (inner, lone, innerWidth) => draw(icon.els, (r, e) => {
     if (r !== 'd' && r !== 'f') return null;
-    const c = ob.get(e) ? inner : lone;
-    return r === 'f' ? { fill: c, stroke: 'none' } : { fill: 'none', stroke: c };
+    const on = ob.get(e), c = on ? inner : lone;
+    return r === 'f' ? { fill: c, stroke: 'none' } : { fill: 'none', stroke: c, 'stroke-width': on && innerWidth ? innerWidth : null };
   }, ctx);
   const grad = (id, a, b, ex = '') => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"${ex}><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
 
@@ -284,43 +285,46 @@ export function renderSvg(icon, opt = {}) {
     return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + defs + body + '</svg>';
   }
 
-  // ---- iso: the glyph stands upright on a glass tile and is extruded backwards; viewBox 64 ----
-  const sg = 1.12, s = 0.9, cyT = 40, T = 5, depth = 3.2;
-  const gx = (32 - 10.392 * sg).toFixed(3), gy = (cyT - 30 * sg).toFixed(3);
-  const GM = (k = 0) => `matrix(${0.866 * sg} ${0.5 * sg} 0 ${sg} ${(+gx + 0.866 * sg * k).toFixed(3)} ${(+gy - 0.5 * sg * k).toFixed(3)})`;
-  const TM = `matrix(${0.866 * s} ${0.5 * s} ${-0.866 * s} ${0.5 * s} 32 ${cyT - 12 * s})`;
-  const isw = Math.max(sw, 1.5) * 1.15;
-  ctx.sw = isw;
-  const tileR = '<rect x="-3" y="-3" width="30" height="30" rx="6.5"/>';
-  let slab = '';
-  for (let k = T; k >= 1; k -= 0.5) slab += `<g transform="translate(0 ${k})"><g transform="${TM}" fill="url(#${uid}s)">${tileR}</g></g>`;
-  const tile = slab + `<g transform="${TM}"><rect x="-3" y="-3" width="30" height="30" rx="6.5" fill="url(#${uid}t)"/>` +
-    `<rect x="-2.2" y="-2.2" width="28.4" height="28.4" rx="5.8" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".7"/>` +
-    `<ellipse cx="12" cy="12" rx="12" ry="5" fill="url(#${uid}r)"${ctx.anim ? ` style="transform-box:fill-box;transform-origin:center;animation:bri-shadow ${SHADOW[1]}"` : ''}/></g>`;
-  const layer = (k, paint) => `<g transform="${GM(k)}" stroke-width="${isw}"${attrs(ROUND)}>` + draw(icon.els, paint, ctx) + '</g>';
-  let glyph = '';
-  const steps = 3; // three extrusion copies read as solid depth at icon sizes; each copy repeats every animation
-  for (let i = steps; i >= 1; i--) {
-    const c = i === steps ? p.dd : p.d;
-    glyph += layer((depth * i) / steps, (r) => (r === 'h' ? null : r === 'f' ? { fill: c, stroke: 'none' } : isShape(r) ? { fill: c, stroke: c } : { fill: 'none', stroke: c }));
+  // ---- iso: the glyph becomes a chunky extruded 3D object (upright by default) with a soft ground shadow; viewBox 64 ----
+  {
+    const up = opt.iso !== 'flat'; // default: upright extruded object; 'flat' lays it in the ground plane
+    const S = 1.36, oy = 31 - 12 * 1.36;           // flat: glyph grid 0..24 maps to a 56 px diamond centred at (32, 31)
+    const U = 1.42;                                 // upright: front face sheared onto the right-facing plane
+    const ux = 32 - 0.866 * U * 12 - 2, uy = 32 - U * 12 - 0.5 * U * 12 - 1;
+    const M = (dy = 0) => up
+      ? `matrix(${0.866 * U} ${0.5 * U} 0 ${U} ${(ux + 0.866 * U * dy * 0.62).toFixed(2)} ${(uy - 0.5 * U * dy * 0.62).toFixed(2)})`
+      : `matrix(${0.866 * S} ${0.5 * S} ${-0.866 * S} ${0.5 * S} 32 ${(oy + dy).toFixed(2)})`;
+    const gw = Math.max(sw, 1.5) * 1.6;             // chunky strokes read as solid ribbons once extruded
+    ctx.sw = gw;
+    // extrusion depth (screen px); 1 px steps are invisible below ~120 px, finer steps only for large renders
+    const D = 6, step = (opt.size ?? 64) >= 120 && !opt.animated ? 0.5 : 1;
+    const G = (dy, inner) => `<g transform="${M(dy)}" stroke-width="${gw.toFixed(2)}"${attrs(ROUND)}>${inner}</g>`;
+    const sideB = `url(#${uid}sb)`, sideA = `url(#${uid}sa)`;
+    const ext = draw(icon.els, (r) => (r === 'h' ? null : r === 'a' ? { fill: sideA, stroke: sideA } : r === 'A' ? { fill: 'none', stroke: sideA } : r === 'b' ? { fill: sideB, stroke: sideB } : r === 'f' ? { fill: sideB, stroke: 'none' } : { fill: 'none', stroke: sideB }), ctx);
+    let glyph = '';
+    for (let k = D; k > 0.01; k -= step) glyph += G(k, ext);
+    const topPaint = draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: `url(#${uid}g)` } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: `url(#${uid}a)` } : r === 'A' ? { fill: 'none', stroke: p.a } : null), ctx) +
+      split(p.d, p.m, +(gw * 0.68).toFixed(2)) +
+      draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff', 'stroke-opacity': '.95' } : null), ctx);
+    glyph += G(0, topPaint);
+    const shadow = up ? `<ellipse cx="34" cy="55" rx="22" ry="7" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
+    const ah = (p.a.match(/hsl\((\d+)/) || [0, 0])[1], h = (p.m.match(/hsl\((\d+)/) || [0, 0])[1];
+    // side gradients run across the object in screen space: lit left faces, shaded right faces
+    const side = (id, c1, c2) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${up ? 0 : 24}" x2="24" y2="${up ? 24 : 0}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
+    const defs = `<defs>` +
+      `<linearGradient id="${uid}g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${p.l}"/><stop offset="1" stop-color="${p.m}"/></linearGradient>` +
+      `<linearGradient id="${uid}a" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="${p.al}"/><stop offset="1" stop-color="${p.a}"/></linearGradient>` +
+      side(uid + 'sb', `hsl(${h} 80% 52%)`, `hsl(${h} 70% 28%)`) + side(uid + 'sa', `hsl(${ah} 85% 50%)`, `hsl(${ah} 75% 30%)`) +
+      `<radialGradient id="${uid}q"><stop offset="0" stop-color="${p.dd}" stop-opacity=".38"/><stop offset=".6" stop-color="${p.dd}" stop-opacity=".12"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient></defs>`;
+    // opt.layer splits the icon for compositing: 'base' = shadow, 'glyph' = object without its float, so a page can
+    // float the object with a GPU transform instead of repainting the whole SVG each frame.
+    if (opt.layer === 'base') return head('0 0 64 64', { fill: 'none' }) + defs + shadow + '</svg>';
+    if (opt.layer === 'glyph') return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used) + defs + glyph + '</svg>';
+    const A = ctx.anim;
+    const extra = A ? `@keyframes bri-hover{${HOVER[0]}}` : '';
+    return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used, extra) + defs + shadow + `<g${A ? ` style="animation:bri-hover ${HOVER[1]}"` : ''}>${glyph}</g></svg>`;
   }
-  glyph += `<g transform="${GM(0)}" stroke-width="${isw}"${attrs(ROUND)}>` +
-    draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: '#fff' } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: p.al } : null), ctx) +
-    split(p.d, '#fff') + draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff' } : r === 'A' ? { fill: 'none', stroke: p.a } : null), ctx) + '</g>';
-  const defs = `<defs>${grad(uid + 'g', '#fff', p.l)}${grad(uid + 'a', p.al, p.a)}${grad(uid + 't', p.m, p.k, '')}` +
-    `<linearGradient id="${uid}s" gradientUnits="userSpaceOnUse" x1="-3" y1="27" x2="27" y2="-3"><stop offset="0" stop-color="${p.k}"/><stop offset=".499" stop-color="${p.k}"/><stop offset=".5" stop-color="${p.d}"/><stop offset="1" stop-color="${p.d}"/></linearGradient>` +
-    `<radialGradient id="${uid}r"><stop offset="0" stop-color="${p.dd}" stop-opacity=".75"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient>` +
-    `<radialGradient id="${uid}q"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>` +
-    `</defs>`;
-  const A = ctx.anim;
-  const ground = `<ellipse cx="32" cy="${cyT + T + 4}" rx="27" ry="12" fill="url(#${uid}q)"/>`;
-  // opt.layer splits the icon for compositing: 'base' = ground + tile, 'glyph' = glyph only with no float.
-  // A page can then float the glyph layer with a GPU transform instead of repainting the whole SVG each frame.
-  if (opt.layer === 'base') return head('0 0 64 64', { fill: 'none' }) + defs + ground + tile + '</svg>';
-  if (opt.layer === 'glyph') return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used) + defs + glyph + '</svg>';
-  const extra = A ? `@keyframes bri-hover{${HOVER[0]}}@keyframes bri-shadow{${SHADOW[0]}}` : '';
-  return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used, extra) + defs + ground + tile +
-    `<g${A ? ` style="animation:bri-hover ${HOVER[1]}"` : ''}>${glyph}</g></svg>`;
+
 }
 
 export const VARIANTS = ['line', 'solid', 'color', 'iso'];
