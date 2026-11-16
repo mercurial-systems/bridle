@@ -72,7 +72,7 @@ function Hero({ go }: { go: (p: string) => void }) {
           Icons in every <span className="spectrum">dimension.</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }} className="mt-7 max-w-2xl text-lg text-ink/65 sm:text-xl">
-          One drawing becomes line, solid, colour and glossy isometric 3D, still or in motion. Built for SaaS, finance and crypto products.
+          One drawing becomes line, solid, colour and layered isometric 3D, still or in motion. Built for SaaS, finance and crypto products.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.6 }} className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <button onClick={() => go('/icons')} className="group inline-flex items-center gap-2 rounded-2xl border border-lime-deep/30 bg-lime px-6 py-3.5 text-base font-semibold text-ink shadow-[inset_0_-3px_0_rgba(0,0,0,.08),0_10px_30px_-10px_rgba(79,154,23,.6)] transition hover:-translate-y-0.5 hover:brightness-95">
@@ -134,7 +134,7 @@ function Playground() {
     <section className="mx-auto max-w-[1400px] px-4 py-24 sm:px-6">
       <motion.div {...rise} className="mx-auto max-w-3xl text-center">
         <TextAnimate text="One drawing. Four dimensions." type="rollIn" className="m-0 p-0 pb-0 text-4xl font-semibold tracking-tight text-ink sm:text-6xl dark:text-ink" />
-        <p className="mt-4 text-lg text-ink/60">Every icon is a single set of shapes with roles. The renderer turns them into strokes, fills, gradients or a lit 3D object, so the styles never drift apart. Try it.</p>
+        <p className="mt-4 text-lg text-ink/60">Every icon is a single set of shapes with roles. The renderer turns them into strokes, fills, gradients or layered 3D glass, so the styles never drift apart. Try it.</p>
       </motion.div>
       <motion.div {...rise} ref={ref} className="mt-12 grid overflow-hidden rounded-[32px] border bg-white shadow-[0_40px_120px_-50px_rgba(20,24,18,.35)] lg:grid-cols-[1.25fr_1fr]">
         <div className={cn('dots relative flex min-h-[420px] items-center justify-center bg-band text-ink [--bri-knockout:#f7f8f5]', !visible && 'paused')}>
@@ -205,7 +205,7 @@ function Bento() {
           </Cell>
           <Cell className="bg-gradient-to-br from-[#efeaff] to-[#e2f6ff] md:col-span-2">
             <p className="text-2xl font-semibold">Glossy 3D</p>
-            <p className="mt-1 text-ink/60">Every icon, extruded and lit.</p>
+            <p className="mt-1 text-ink/60">Thin glass layers, floating accents.</p>
             <div className="mt-2 flex justify-center"><LiveSvg icon={byName['vault']} look={{ variant: 'iso', animated: true }} size={210} /></div>
           </Cell>
           <Cell className="md:col-span-2">

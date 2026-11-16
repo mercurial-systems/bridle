@@ -285,37 +285,51 @@ export function renderSvg(icon, opt = {}) {
     return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + defs + body + '</svg>';
   }
 
-  // ---- iso: the glyph becomes a chunky extruded 3D object (upright by default) with a soft ground shadow; viewBox 64 ----
+  // ---- iso: thin layered glass plates standing in isometric space, accents floating in front; viewBox 64 ----
   {
     const up = opt.iso !== 'flat'; // default: upright extruded object; 'flat' lays it in the ground plane
     const S = 1.36, oy = 31 - 12 * 1.36;           // flat: glyph grid 0..24 maps to a 56 px diamond centred at (32, 31)
-    const U = 1.42;                                 // upright: front face sheared onto the right-facing plane
-    const ux = 32 - 0.866 * U * 12 - 2, uy = 32 - U * 12 - 0.5 * U * 12 - 1;
+    const U = 1.3;                                  // upright: front face sheared onto the right-facing plane
+    const ux = 32 - 0.866 * U * 12 - 0.5, uy = 31.5 - U * 12 - 0.5 * U * 12;
     const M = (dy = 0) => up
       ? `matrix(${0.866 * U} ${0.5 * U} 0 ${U} ${(ux + 0.866 * U * dy * 0.62).toFixed(2)} ${(uy - 0.5 * U * dy * 0.62).toFixed(2)})`
       : `matrix(${0.866 * S} ${0.5 * S} ${-0.866 * S} ${0.5 * S} 32 ${(oy + dy).toFixed(2)})`;
-    const gw = Math.max(sw, 1.5) * 1.6;             // chunky strokes read as solid ribbons once extruded
+    const gw = Math.max(sw, 1.5) * 1.12;            // close to the flat stroke weight: fine, not chunky
     ctx.sw = gw;
-    // extrusion depth (screen px); 1 px steps are invisible below ~120 px, finer steps only for large renders
-    const D = 6, step = (opt.size ?? 64) >= 120 && !opt.animated ? 0.5 : 1;
+    // Layered glass: each top-level unit is a thin plate. Bodies sit on the base plane; pure-accent units float in
+    // front of it, so depth comes from separation and soft edges rather than from thick blocks.
+    const D = 2.2, LIFT = 3.4, step = (opt.size ?? 64) >= 160 && !opt.animated ? 0.55 : 1.1;
     const G = (dy, inner) => `<g transform="${M(dy)}" stroke-width="${gw.toFixed(2)}"${attrs(ROUND)}>${inner}</g>`;
     const sideB = `url(#${uid}sb)`, sideA = `url(#${uid}sa)`;
-    const ext = draw(icon.els, (r) => (r === 'h' ? null : r === 'a' ? { fill: sideA, stroke: sideA } : r === 'A' ? { fill: 'none', stroke: sideA } : r === 'b' ? { fill: sideB, stroke: sideB } : r === 'f' ? { fill: sideB, stroke: 'none' } : { fill: 'none', stroke: sideB }), ctx);
+    const has = (e, r) => (e.t === 'g' ? e.els.some((x) => has(x, r)) : e.r === r && !(r === 'a' && e.t === 'path' && !/z\s*$/i.test(e.d)));
+    const sidePaint = (r, e) => (r === 'h' || ((r === 'd' || r === 'f') && ob.get(e)) ? null
+      : r === 'a' ? { fill: sideA, stroke: sideA } : r === 'A' ? { fill: 'none', stroke: sideA }
+      : r === 'b' ? { fill: sideB, stroke: sideB } : r === 'f' ? { fill: sideB, stroke: 'none' } : { fill: 'none', stroke: sideB });
+    const topPaint = (r, e) => {
+      if (r === 'b') return { fill: `url(#${uid}g)`, stroke: `url(#${uid}e)` };
+      if (r === 'a') return { fill: `url(#${uid}a)`, stroke: p.al, 'stroke-width': +(gw * 0.7).toFixed(2) };
+      if (r === 'A') return { fill: 'none', stroke: `url(#${uid}a)` };
+      if (r === 'h') return { fill: 'none', stroke: '#fff', 'stroke-opacity': '.95' };
+      const on = ob.get(e), c = on ? p.d : `url(#${uid}e)`;
+      return r === 'f' ? { fill: on ? p.d : p.m, stroke: 'none' } : { fill: 'none', stroke: c, 'stroke-width': on ? +(gw * 0.82).toFixed(2) : null };
+    };
     let glyph = '';
-    for (let k = D; k > 0.01; k -= step) glyph += G(k, ext);
-    const topPaint = draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: `url(#${uid}g)` } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: `url(#${uid}a)` } : r === 'A' ? { fill: 'none', stroke: p.a } : null), ctx) +
-      split(p.d, p.m, +(gw * 0.68).toFixed(2)) +
-      draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff', 'stroke-opacity': '.95' } : null), ctx);
-    glyph += G(0, topPaint);
-    const shadow = up ? `<ellipse cx="34" cy="55" rx="22" ry="7" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
+    for (const u of icon.els) {
+      const z = has(u, 'a') && !has(u, 'b') ? -LIFT : 0;
+      const ext = draw([u], sidePaint, ctx);
+      if (ext) for (let k = D; k > 0.01; k -= step) glyph += G(z + k, ext);
+      glyph += G(z, draw([u], topPaint, ctx));
+    }
+    const shadow = up ? `<ellipse cx="33" cy="56.5" rx="19" ry="5" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
     const ah = (p.a.match(/hsl\((\d+)/) || [0, 0])[1], h = (p.m.match(/hsl\((\d+)/) || [0, 0])[1];
     // side gradients run across the object in screen space: lit left faces, shaded right faces
     const side = (id, c1, c2) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${up ? 0 : 24}" x2="24" y2="${up ? 24 : 0}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
     const defs = `<defs>` +
-      `<linearGradient id="${uid}g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="${p.l}"/><stop offset="1" stop-color="${p.m}"/></linearGradient>` +
+      `<linearGradient id="${uid}g" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="${p.l}"/><stop offset="1" stop-color="hsl(${h} 95% 76%)"/></linearGradient>` +
+      `<linearGradient id="${uid}e" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="hsl(${h} 95% 74%)"/><stop offset="1" stop-color="${p.s}"/></linearGradient>` +
       `<linearGradient id="${uid}a" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="${p.al}"/><stop offset="1" stop-color="${p.a}"/></linearGradient>` +
-      side(uid + 'sb', `hsl(${h} 80% 52%)`, `hsl(${h} 70% 28%)`) + side(uid + 'sa', `hsl(${ah} 85% 50%)`, `hsl(${ah} 75% 30%)`) +
-      `<radialGradient id="${uid}q"><stop offset="0" stop-color="${p.dd}" stop-opacity=".38"/><stop offset=".6" stop-color="${p.dd}" stop-opacity=".12"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient></defs>`;
+      side(uid + 'sb', `hsl(${h} 85% 60%)`, `hsl(${h} 72% 40%)`) + side(uid + 'sa', `hsl(${ah} 88% 54%)`, `hsl(${ah} 78% 38%)`) +
+      `<radialGradient id="${uid}q"><stop offset="0" stop-color="${p.dd}" stop-opacity=".26"/><stop offset=".6" stop-color="${p.dd}" stop-opacity=".08"/><stop offset="1" stop-color="${p.dd}" stop-opacity="0"/></radialGradient></defs>`;
     // opt.layer splits the icon for compositing: 'base' = shadow, 'glyph' = object without its float, so a page can
     // float the object with a GPU transform instead of repainting the whole SVG each frame.
     if (opt.layer === 'base') return head('0 0 64 64', { fill: 'none' }) + defs + shadow + '</svg>';
