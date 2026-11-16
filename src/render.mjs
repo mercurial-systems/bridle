@@ -314,11 +314,17 @@ export function renderSvg(icon, opt = {}) {
       return r === 'f' ? { fill: on ? p.d : p.m, stroke: 'none' } : { fill: 'none', stroke: c, 'stroke-width': on ? +(gw * 0.82).toFixed(2) : null };
     };
     let glyph = '';
+    const anyBody = icon.els.some((u) => has(u, 'b'));
     for (const u of icon.els) {
-      const z = has(u, 'a') && !has(u, 'b') ? -LIFT : 0;
+      const lifted = has(u, 'a') && !has(u, 'b');
+      const z = lifted ? -LIFT : 0;
+      // a floating accent casts a soft contact shadow onto the plate behind it
+      if (lifted && anyBody) glyph += G(0.35, draw([u], (r) => (r === 'a' ? { fill: p.dd, stroke: p.dd, opacity: '.16' } : null), ctx));
       const ext = draw([u], sidePaint, ctx);
       if (ext) for (let k = D; k > 0.01; k -= step) glyph += G(z + k, ext);
       glyph += G(z, draw([u], topPaint, ctx));
+      // glass sheen: a diagonal white sweep across each body face
+      if (has(u, 'b')) glyph += G(z, draw([u], (r) => (r === 'b' ? { fill: `url(#${uid}w)`, stroke: 'none' } : null), ctx));
     }
     const shadow = up ? `<ellipse cx="33" cy="56.5" rx="19" ry="5" fill="url(#${uid}q)"/>` : `<ellipse cx="32" cy="${(31 + D + 3).toFixed(1)}" rx="27" ry="13" fill="url(#${uid}q)"/>`;
     const ah = (p.a.match(/hsl\((\d+)/) || [0, 0])[1], h = (p.m.match(/hsl\((\d+)/) || [0, 0])[1];
@@ -326,6 +332,7 @@ export function renderSvg(icon, opt = {}) {
     const side = (id, c1, c2) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${up ? 0 : 24}" x2="24" y2="${up ? 24 : 0}"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>`;
     const defs = `<defs>` +
       `<linearGradient id="${uid}g" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="${p.l}"/><stop offset="1" stop-color="hsl(${h} 95% 76%)"/></linearGradient>` +
+      `<linearGradient id="${uid}w" gradientUnits="userSpaceOnUse" x1="3" y1="3" x2="17" y2="19"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".32" stop-color="#fff" stop-opacity=".18"/><stop offset=".33" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>` +
       `<linearGradient id="${uid}e" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="hsl(${h} 95% 74%)"/><stop offset="1" stop-color="${p.s}"/></linearGradient>` +
       `<linearGradient id="${uid}a" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="${p.al}"/><stop offset="1" stop-color="${p.a}"/></linearGradient>` +
       side(uid + 'sb', `hsl(${h} 85% 60%)`, `hsl(${h} 72% 40%)`) + side(uid + 'sa', `hsl(${ah} 88% 54%)`, `hsl(${ah} 78% 38%)`) +
