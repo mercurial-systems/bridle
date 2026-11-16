@@ -352,7 +352,7 @@ export default class App extends Component<object, S> {
     const sects = st.view !== 'index' ? [] : GROUPS.filter((gr) => st.cat === 'all' || st.cat === gr.id).flatMap((gr) => gr.cats.map((c) => ({ id: c.id, title: c.label, items: c.icons.filter(hit) }))).filter((s) => s.items.length);
     if (st.view === 'index') this._idx = sects.flatMap((s) => s.items.map((i) => IDX.get(i.name)!));
     const catN = (id: string) => (id === 'all' ? ICONS : GROUPS.find((gr) => gr.id === id)!.cats.flatMap((c) => c.icons)).filter(hit).length;
-    const token = <p className="lab mute" style={{ margin: 0, textTransform: 'none', letterSpacing: 0, lineHeight: 1.6 }}>A public good from Verity. Verity has not announced a token. Any airdrop or presale offer is a scam.</p>;
+    const token = <p className="lab mute" style={{ margin: 0, textTransform: 'none', letterSpacing: 0, lineHeight: 1.6 }}>by the makers of <a href="https://verity.dev">Verity</a> © Mercurial Systems</p>;
 
     return (
       <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: 'var(--bg)', color: 'var(--ink)' }}>
