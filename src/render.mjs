@@ -298,6 +298,10 @@ export function renderSvg(icon, opt = {}) {
     `</defs>`;
   const A = ctx.anim;
   const ground = `<ellipse cx="32" cy="${cyT + T + 4}" rx="27" ry="12" fill="url(#${uid}q)"/>`;
+  // opt.layer splits the icon for compositing: 'base' = ground + tile, 'glyph' = glyph only with no float.
+  // A page can then float the glyph layer with a GPU transform instead of repainting the whole SVG each frame.
+  if (opt.layer === 'base') return head('0 0 64 64', { fill: 'none' }) + defs + ground + tile + '</svg>';
+  if (opt.layer === 'glyph') return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used) + defs + glyph + '</svg>';
   const extra = A ? `@keyframes bri-hover{${HOVER[0]}}@keyframes bri-shadow{${SHADOW[0]}}` : '';
   return head('0 0 64 64', { fill: 'none' }) + styleBlock(ctx.used, extra) + defs + ground + tile +
     `<g${A ? ` style="animation:bri-hover ${HOVER[1]}"` : ''}>${glyph}</g></svg>`;

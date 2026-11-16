@@ -5,7 +5,7 @@ export { ICONS };
 export type { Icon, Variant };
 
 export type Style = { variant: Variant; animated: boolean };
-export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number };
+export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number; layer?: 'base' | 'glyph' };
 
 export const STYLE_LIST: { id: string; label: string; variant: Variant; animated: boolean }[] = [
   { id: 'line', label: 'Line', variant: 'line', animated: false },

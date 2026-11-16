@@ -1,4 +1,4 @@
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, Download, GitBranch, Search, X, Copy, Image as ImageIcon, Box } from 'lucide-react';
 import { TextAnimate } from '@/components/ui/text-animate';
@@ -43,13 +43,36 @@ function Svg({ icon, look, size, className }: { icon: Icon; look: Partial<Look>;
   return <span className={cn('inline-flex leading-[0]', className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-// Animates only while on screen, and (unless Motion is on) only while hovered.
+// Renders on first sight (cached), then only pauses/resumes via a class while scrolling: no re-render, no re-parse.
+// Without Motion, an icon animates only while hovered.
+const cache = new Map<string, string>();
+function cachedSvg(icon: Icon, look: Partial<Look>, size: number, layer?: 'base' | 'glyph') {
+  const key = `${icon.name}|${look.variant}|${look.animated ? 1 : 0}|${look.palette}|${look.strokeWidth}|${size}|${layer}`;
+  let s = cache.get(key);
+  if (!s) {
+    s = svgFor(icon, { ...look, layer } as Partial<Look>, size, `c${cache.size.toString(36)}`);
+    if (cache.size > 4000) cache.clear();
+    cache.set(key, s);
+  }
+  return s;
+}
 function LiveSvg({ icon, look, size, className, hover }: { icon: Icon; look: Partial<Look>; size: number; className?: string; hover?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   const visible = useVisible(ref);
-  const animated = visible && (!!look.animated || !!hover);
-  const html = useMemo(() => svgFor(icon, { ...look, animated }, size), [icon, look.variant, look.palette, look.strokeWidth, animated, size]);
-  return <span ref={ref} className={cn('inline-flex leading-[0]', className)} dangerouslySetInnerHTML={{ __html: html }} />;
+  const [seen, setSeen] = useState(false);
+  useEffect(() => { if (visible) setSeen(true); }, [visible]);
+  const animated = !!look.animated || !!hover;
+  // isometric motion: static tile + glyph layer floated by a composited CSS transform (no full-SVG repaint per frame)
+  if (look.variant === 'iso' && animated) {
+    return (
+      <span ref={ref} style={{ width: size, height: size }} className={cn('relative inline-block leading-[0]', !visible && 'paused', className)}>
+        {seen && <span className="absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: false }, size, 'base') }} />}
+        {seen && <span className="iso-float absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: true }, size, 'glyph') }} />}
+      </span>
+    );
+  }
+  const html = seen ? cachedSvg(icon, { ...look, animated }, size) : '';
+  return <span ref={ref} style={{ minWidth: size, minHeight: size }} className={cn('inline-flex leading-[0]', !visible && 'paused', className)} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 /* ---------------------------------------------------------------- nav */
@@ -214,7 +237,7 @@ const Tile = memo(function Tile({ icon, look, onOpen, size }: { icon: Icon; look
   );
 });
 
-const PAGE = 240;
+const PAGE = 160;
 function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => void; onOpen: (i: Icon) => void }) {
   const params = new URLSearchParams(location.search);
   const [q, setQ] = useState(params.get('q') || '');
@@ -227,7 +250,7 @@ function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => 
   const shown = list.slice(0, limit);
   const sentinel = useRef<HTMLDivElement>(null);
   const more = useVisible(sentinel);
-  useEffect(() => { if (more && limit < list.length) setLimit((l) => l + PAGE); }, [more, limit, list.length]);
+  useEffect(() => { if (more && limit < list.length) startTransition(() => setLimit((l) => l + PAGE)); }, [more, limit, list.length]);
   useEffect(() => setLimit(PAGE), [cat, dq, look.variant]);
   useEffect(() => {
     const u = new URL(location.href);

@@ -11,6 +11,8 @@ export interface RenderOptions {
   size?: number;
   title?: string | false;
   uid?: string;
+  /** iso only: render just the tile ('base') or just the glyph without its float ('glyph'), for layered compositing */
+  layer?: 'base' | 'glyph';
 }
 export interface Icon { name: IconName; tags: string[]; cat: string; els: unknown[] }
 export const ICONS: Icon[];
