@@ -62,3 +62,13 @@ body { margin: 0; background: var(--background); color: var(--foreground); font-
 .paused * { animation-play-state: paused !important; }
 .dots { background-image: radial-gradient(#00000012 1px, transparent 1px); background-size: 18px 18px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* landing page */
+.spectrum { background: linear-gradient(92deg, #7c5cff, #e94fb3 30%, #ff8a3d 55%, #2fbf71 80%, #2aa7f0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+@keyframes hero-float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-14px) rotate(1.5deg); } }
+.hero-float { animation: hero-float 5s ease-in-out infinite; will-change: transform; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee { animation: marquee 80s linear infinite; will-change: transform; }
+.marquee-rev { animation-direction: reverse; }
+.marquee-wrap:hover .marquee { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .hero-float, .marquee { animation: none; } }

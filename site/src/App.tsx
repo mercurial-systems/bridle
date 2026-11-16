@@ -1,9 +1,6 @@
 import { memo, startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, Download, GitBranch, Search, X, Copy, Image as ImageIcon, Box } from 'lucide-react';
-import { TextAnimate } from '@/components/ui/text-animate';
-import { TextureButton } from '@/components/ui/texture-button';
-import { RollingNumber } from '@/components/ui/rolling-number';
+import { Download, GitBranch, Search, X, Copy, Image as ImageIcon, Box } from 'lucide-react';
 import { HaloSegmented } from '@/components/ui/halo-segmented';
 import { HaloSwitch } from '@/components/ui/halo-switch';
 import { ColorPicker } from '@/components/ui/color-picker';
@@ -12,14 +9,10 @@ import { CodeBlock } from '@/components/ui/code-block';
 import { DirectionAwareTabs } from '@/components/ui/direction-aware-tabs';
 import { cn } from '@/lib/utils';
 import { useVisible } from '@/lib/visible';
+import { GITHUB, SITE, TOTAL, SHOW_VARIANTS, byName, fmt, Svg, LiveSvg } from '@/lib/icon';
+import Home from './Home';
 import { CATEGORIES, GROUPS, groupOf, ICONS, PRESET_SWATCHES, STYLE_LIST, download, downloadPng, fileSvg, hexToHue, match, styleId, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
 
-const GITHUB = 'https://github.com/mercurial-systems/bridle';
-const SITE = 'https://bridle.verity.dev';
-const byName: Record<string, Icon> = Object.fromEntries(ICONS.map((i) => [i.name, i]));
-const TOTAL = ICONS.length;
-const NEW = TOTAL - 220;
-const fmt = (n: number) => n.toLocaleString('en-US');
 
 /* ---------------------------------------------------------------- routing (two pages, no router) */
 function usePath() {
@@ -37,44 +30,6 @@ function usePath() {
   return [path, go] as const;
 }
 
-/* ---------------------------------------------------------------- one icon */
-function Svg({ icon, look, size, className }: { icon: Icon; look: Partial<Look>; size: number; className?: string }) {
-  const html = useMemo(() => svgFor(icon, look, size), [icon, look.variant, look.animated, look.palette, look.strokeWidth, size]);
-  return <span className={cn('inline-flex leading-[0]', className)} dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-// Renders on first sight (cached), then only pauses/resumes via a class while scrolling: no re-render, no re-parse.
-// Without Motion, an icon animates only while hovered.
-const cache = new Map<string, string>();
-function cachedSvg(icon: Icon, look: Partial<Look>, size: number, layer?: 'base' | 'glyph') {
-  const key = `${icon.name}|${look.variant}|${look.animated ? 1 : 0}|${look.palette}|${look.strokeWidth}|${size}|${layer}`;
-  let s = cache.get(key);
-  if (!s) {
-    s = svgFor(icon, { ...look, layer } as Partial<Look>, size, `c${cache.size.toString(36)}`);
-    if (cache.size > 4000) cache.clear();
-    cache.set(key, s);
-  }
-  return s;
-}
-function LiveSvg({ icon, look, size, className, hover }: { icon: Icon; look: Partial<Look>; size: number; className?: string; hover?: boolean }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const visible = useVisible(ref);
-  const [seen, setSeen] = useState(false);
-  useEffect(() => { if (visible) setSeen(true); }, [visible]);
-  const animated = !!look.animated || !!hover;
-  // isometric motion: static tile + glyph layer floated by a composited CSS transform (no full-SVG repaint per frame)
-  if (look.variant === 'iso' && animated) {
-    return (
-      <span ref={ref} style={{ width: size, height: size }} className={cn('relative inline-block leading-[0]', !visible && 'paused', className)}>
-        {seen && <span className="absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: false }, size, 'base') }} />}
-        {/* parts animate on hover only: dozens of tiles repainting their extruded glyphs every frame is what drops frames */}
-        {seen && <span className="iso-float absolute inset-0" dangerouslySetInnerHTML={{ __html: cachedSvg(icon, { ...look, animated: !!hover }, size, 'glyph') }} />}
-      </span>
-    );
-  }
-  const html = seen ? cachedSvg(icon, { ...look, animated }, size) : '';
-  return <span ref={ref} style={{ minWidth: size, minHeight: size }} className={cn('inline-flex leading-[0]', !visible && 'paused', className)} dangerouslySetInnerHTML={{ __html: html }} />;
-}
 
 /* ---------------------------------------------------------------- nav */
 function Nav({ go, path }: { go: (p: string) => void; path: string }) {
@@ -96,139 +51,6 @@ function Nav({ go, path }: { go: (p: string) => void; path: string }) {
         </nav>
       </div>
     </header>
-  );
-}
-
-/* ---------------------------------------------------------------- home */
-const MOCK = [['dashboard', 'Overview'], ['crypto-wallet', 'Wallet'], ['swap', 'Swap'], ['credit-card', 'Cards'], ['chart-line', 'Markets'], ['shield-check', 'Security'], ['settings', 'Settings']];
-const SHOW_VARIANTS: { value: Variant; label: string }[] = [
-  { value: 'line', label: 'Line' }, { value: 'solid', label: 'Solid' }, { value: 'color', label: 'Colour' }, { value: 'iso', label: 'Isometric' },
-];
-
-function HeroMock() {
-  const [variant, setVariant] = useState<Variant>('color');
-  const [active, setActive] = useState(1);
-  const iso = variant === 'iso';
-  return (
-    <div>
-      <div className="dots relative overflow-hidden rounded-2xl border bg-[#f2f3ef] p-6 sm:p-8">
-        <div className="mx-auto w-full max-w-[340px] rounded-2xl border bg-white p-3 shadow-[0_20px_50px_-20px_rgba(20,24,18,.25)]">
-          <div className="flex items-center gap-3 px-2 pb-3">
-            <Svg icon={byName['user']} look={{ variant: 'color', palette: 'sunset' }} size={34} />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Treasury</p>
-              <p className="truncate text-xs text-muted-foreground">3 accounts · 12 assets</p>
-            </div>
-            <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] font-semibold text-white">PRO</span>
-          </div>
-          {iso ? (
-            <div className="grid grid-cols-3 gap-1 border-t pt-3">
-              {MOCK.slice(0, 6).map(([n, l]) => (
-                <div key={n} className="flex flex-col items-center"><LiveSvg icon={byName[n]} look={{ variant: 'iso', animated: true }} size={78} /><span className="-mt-1 text-[11px] text-muted-foreground">{l}</span></div>
-              ))}
-            </div>
-          ) : (
-            <ul className="border-t pt-2">
-              {MOCK.map(([n, l], i) => (
-                <li key={n}>
-                  <button onMouseEnter={() => setActive(i)} className={cn('flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left text-sm', i === active ? 'bg-tile font-medium [--bri-knockout:#f4f4f1]' : 'text-ink/75')}>
-                    <span className="text-ink"><LiveSvg icon={byName[n]} look={{ variant }} hover={i === active} size={20} /></span>
-                    {l}
-                    {i === 2 && <span className="ml-auto rounded-md bg-lime px-1.5 text-[10px] font-semibold">NEW</span>}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {SHOW_VARIANTS.map((v) => (
-          <button key={v.value} onClick={() => setVariant(v.value)} className={cn('rounded-full border px-3.5 py-1.5 text-sm transition', v.value === variant ? 'border-ink/20 bg-white font-medium shadow-sm' : 'bg-band text-ink/65 hover:bg-tile')}>{v.label}</button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const CARD_ICONS = ['home', 'analytics', 'wallet', 'invoice', 'bank', 'block'];
-const STYLE_CARDS: { variant: Variant; title: string; sub: string; bg: string }[] = [
-  { variant: 'line', title: 'Line', sub: '1.5 stroke', bg: '#f3f1ec' },
-  { variant: 'solid', title: 'Solid', sub: 'Knock-out details', bg: '#eef3f8' },
-  { variant: 'color', title: 'Colour', sub: 'Gradient duotone', bg: '#f8eeee' },
-  { variant: 'iso', title: 'Isometric', sub: 'Glossy 3D objects', bg: '#f1effa' },
-];
-
-function StyleCard({ c }: { c: (typeof STYLE_CARDS)[number] }) {
-  const [hover, setHover] = useState(false);
-  const iso = c.variant === 'iso';
-  return (
-    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} className="rounded-2xl p-6 text-center" style={{ background: c.bg, ['--bri-knockout' as string]: c.bg }}>
-      <div className={cn('mx-auto grid w-fit grid-cols-3 text-ink', iso ? 'gap-0' : 'gap-5')}>
-        {CARD_ICONS.map((n) => <LiveSvg key={n} icon={byName[n]} look={{ variant: c.variant }} hover={hover} size={iso ? 64 : 30} />)}
-      </div>
-      <p className="mt-6 text-xl font-semibold">{c.title}</p>
-      <p className="text-ink/55">{c.sub}</p>
-    </div>
-  );
-}
-
-function Home({ go }: { go: (p: string) => void }) {
-  return (
-    <main>
-      <section className="border-b bg-gradient-to-b from-[#fafaf8] to-white">
-        <div className="mx-auto grid max-w-[1400px] items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_1fr] lg:py-24">
-          <div>
-            <h1 className="text-[42px] leading-[1.05] font-semibold tracking-tight sm:text-6xl">
-              Next-gen icons <span className="text-ink/35">that make money look good.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-ink/70 sm:text-xl">
-              {fmt(TOTAL)} original icons for SaaS, finance, banking and crypto. Line, solid, colour and isometric 3D, still or in motion. Free and MIT licensed.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <button onClick={() => go('/icons')} className="inline-flex items-center gap-2 rounded-xl border border-lime-deep/30 bg-lime px-5 py-3 text-[15px] font-semibold text-ink shadow-[inset_0_-2px_0_rgba(0,0,0,.08)] hover:brightness-95">
-                Explore {fmt(TOTAL)} icons <ArrowRight className="size-4" />
-              </button>
-              <div className="w-48"><TextureButton variant="minimal" onClick={() => (location.href = '/bridle-svg.zip')}><Download className="mr-2 size-4" />All SVGs (.zip)</TextureButton></div>
-            </div>
-            <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4">
-              {[[TOTAL, 'icons'], [8, 'styles'], [GROUPS.length, 'collections'], [TOTAL * 8, 'SVG files']].map(([n, l]) => (
-                <div key={l}><dt className="text-3xl font-semibold tabular-nums"><RollingNumber value={n as number} /></dt><dd className="text-sm text-ink/55">{l}</dd></div>
-              ))}
-            </dl>
-          </div>
-          <HeroMock />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{STYLE_CARDS.map((c) => <StyleCard key={c.variant} c={c} />)}</div>
-        <p className="mt-5 text-center text-sm text-ink/50">Hover a card to play its motion. Every style also ships as an animated SVG.</p>
-      </section>
-
-      <section className="border-y bg-band">
-        <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
-          <TextAnimate text="Built for every product." type="rollIn" className="m-0 p-0 pb-0 text-center text-4xl font-semibold tracking-tight text-ink sm:text-5xl dark:text-ink" />
-          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-ink/60">From dashboards and invoices to validators, perps and prediction markets. {fmt(NEW)} new icons in this release.</p>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {GROUPS.map((g) => (
-              <div key={g.id} className="rounded-2xl border bg-white p-6">
-                <button onClick={() => go(`/icons?g=${g.id}`)} className="group flex w-full items-start justify-between text-left">
-                  <span><span className="block text-2xl font-semibold">{g.label}</span><span className="text-sm text-ink/50">{fmt(g.cats.reduce((n, c) => n + c.icons.length, 0))} icons</span></span>
-                  <span className="flex -space-x-1">{g.cats.slice(0, 4).map((c) => <Svg key={c.id} icon={c.icons[0]} look={{ variant: 'color' }} size={30} className="rounded-lg bg-white p-1 ring-1 ring-border" />)}</span>
-                </button>
-                <div className="mt-5 flex flex-wrap gap-1.5">
-                  {g.cats.map((c) => (
-                    <button key={c.id} onClick={() => go(`/icons?g=${g.id}&c=${c.id}`)} className="rounded-full bg-band px-3 py-1 text-sm text-ink/70 hover:bg-tile hover:text-ink">{c.short}</button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <Usage />
-    </main>
   );
 }
 
@@ -493,7 +315,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Nav go={go} path={path} />
-      {path.startsWith('/icons') ? <Library look={look} setLook={setLook} onOpen={onOpen} /> : path.startsWith('/use') ? <Usage /> : <Home go={go} />}
+      {path.startsWith('/icons') ? <Library look={look} setLook={setLook} onOpen={onOpen} /> : path.startsWith('/use') ? <Usage /> : <Home go={go} onOpen={onOpen} usage={<Usage />} />}
       <Footer />
       <AnimatePresence>{open && <Detail key={open.name} icon={open} look={look} setLook={setLook} onClose={() => setOpen(null)} />}</AnimatePresence>
     </div>
