@@ -1,0 +1,20 @@
+{
+  "name": "bridle-icons",
+  "version": "1.0.0",
+  "description": "Bridle: next-gen open icons for SaaS, business, finance, banking, cards and crypto. Line, solid, colour and isometric 3D, static or animated.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://bridle.verity.dev",
+  "repository": { "type": "git", "url": "git+https://github.com/mercurial-systems/bridle.git" },
+  "keywords": ["icons", "svg", "react", "isometric", "animated-icons", "crypto-icons", "finance-icons", "fintech", "web3"],
+  "sideEffects": ["./src/element.mjs"],
+  "files": ["src"],
+  "exports": {
+    ".": { "types": "./src/index.d.ts", "default": "./src/index.mjs" },
+    "./react": { "types": "./src/react.d.ts", "default": "./src/react.mjs" },
+    "./element": "./src/element.mjs"
+  },
+  "peerDependencies": { "react": ">=17" },
+  "peerDependenciesMeta": { "react": { "optional": true } },
+  "scripts": { "build": "node scripts/build.mjs", "check": "node scripts/check.mjs" }
+}
