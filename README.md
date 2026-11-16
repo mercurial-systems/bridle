@@ -1,12 +1,14 @@
 # Bridle
 
 Next-gen open icons for SaaS, business, finance, banking, payments and crypto.
-3,317 original, individually designed icons in 4 collections (Crypto, Finance, Business, Product & Tech) and 46 subcategories, each drawn once on a 24 px grid and rendered in six styles:
+3,317 original, individually designed icons in 4 collections (Crypto, Finance, Business, Product & Tech) and 46 subcategories, each drawn once on a 24 px grid and rendered in five styles, each static or animated:
 
 | style | file folder | notes |
 | --- | --- | --- |
-| Line | `line` | 1.5 stroke, round caps, inherits `currentColor` |
+| Line | `line` | bold 2 px stroke, round caps, inherits `currentColor` |
+| Duo | `duo` | line with bodies toned back so accents and details lead |
 | Solid | `solid` | filled silhouettes with knocked-out details, `currentColor` |
+| Duotone | `duotone` | tinted bodies, solid accents, ink details, `currentColor` |
 | Colour | `color` | gradient bodies and accents, per-category palettes |
 | … each with motion | `<style>-animated` | CSS keyframes inside the SVG, honours `prefers-reduced-motion` |
 
@@ -14,7 +16,7 @@ Browse, customise and download at **https://bridle.verity.dev**.
 
 Collections and subcategories are listed in `GROUPS` (`src/index.mjs`) and in `icons.json`.
 
-Every style (line, solid, colour, each static or animated) is hosted as a file and included in the zip.
+Hosted as files: line, duo, solid, duotone, color and color-animated (Cloudflare Pages caps a deploy at 20,000 files). The zip has all ten folders. `llms.txt` describes the whole API for AI coding agents.
 
 ## Use
 
@@ -56,9 +58,9 @@ import { svg } from 'bridle-icons';
 el.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });
 ```
 
-Animated solid paints its cut-outs with the CSS variable `--bri-knockout` (default `#fff`): set it to your background.
+Duotone and animated solid paint details that sit on a solid shape with the CSS variable `--bri-knockout` (default `#fff`): set it to your background.
 
-Options: `variant` (`line` `solid` `color`), `animated`, `size`, `strokeWidth`, `title`, and `palette`:
+Options: `variant` (`line` `duo` `solid` `duotone` `color`), `animated`, `size`, `strokeWidth`, `title`, and `palette`:
 a preset (`spectrum` `sunset` `ocean` `mint` `grape` `lava` `gold` `ice`), a hue `0–360`, a `[hue, accentHue]` pair or a full palette object.
 
 ## How it works
@@ -68,7 +70,7 @@ detail colours from bounding boxes instead of masks, and the website only animat
 
 Each icon in `src/icons/*.mjs` is a short list of primitives with a **role**: `b` body, `a` accent, `d` detail, `f` dot,
 `h` shine. `src/render.mjs` reads the roles: line strokes everything (later shapes knock a gap out of strokes behind them),
-solid fills bodies and cuts details out, colour paints gradients. Motion is an `an` name on any primitive or group. One drawing, six consistent styles, no hand-maintained copies.
+solid fills bodies and cuts details out, colour paints gradients. Motion is an `an` name on any primitive or group. One drawing, five consistent styles, no hand-maintained copies.
 
 ```bash
 npm run check   # every icon renders in every style, ids resolve, names are unique

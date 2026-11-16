@@ -69,3 +69,7 @@ body { margin: 0; background: var(--background); color: var(--foreground); font-
 .marquee-rev { animation-direction: reverse; }
 .marquee-wrap:hover .marquee { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .hero-float, .marquee { animation: none; } }
+
+@keyframes hero-spin { to { transform: rotate(360deg); } }
+.hero-spin { animation: hero-spin 14s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .hero-spin { animation: none; } }

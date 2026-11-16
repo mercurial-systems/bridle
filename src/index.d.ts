@@ -1,6 +1,6 @@
 import type { IconName } from './names';
 export type { IconName };
-export type Variant = 'line' | 'solid' | 'color';
+export type Variant = 'line' | 'duo' | 'solid' | 'duotone' | 'color';
 export interface Palette { l: string; m: string; d: string; dd: string; a: string; ad: string; al: string; s: string; as: string; k: string }
 export interface RenderOptions {
   variant?: Variant;

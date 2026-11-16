@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useVisible } from '@/lib/visible';
-import { ICONS, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
+import { ICONS, STYLE_LIST, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
 
 export const GITHUB = 'https://github.com/mercurial-systems/bridle';
 export const SITE = 'https://bridle.verity.dev';
@@ -9,9 +9,8 @@ export const byName: Record<string, Icon> = Object.fromEntries(ICONS.map((i) => 
 export const TOTAL = ICONS.length;
 export const fmt = (n: number) => n.toLocaleString('en-US');
 export const pick = (names: string[]) => names.map((n) => byName[n]).filter(Boolean);
-export const SHOW_VARIANTS: { value: Variant; label: string }[] = [
-  { value: 'line', label: 'Line' }, { value: 'solid', label: 'Solid' }, { value: 'color', label: 'Colour' }
-];
+export const SHOW_VARIANTS: { value: Variant; label: string }[] = STYLE_LIST.map((x) => ({ value: x.id, label: x.label }));
+export const MONO = (v?: Variant) => v !== 'color';
 
 /* ---------------------------------------------------------------- one icon */
 export function Svg({ icon, look, size, className }: { icon: Icon; look: Partial<Look>; size: number; className?: string }) {

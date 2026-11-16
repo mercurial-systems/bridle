@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, ArrowUpRight, Download } from 'lucide-react';
 import { TextAnimate } from '@/components/ui/text-animate';
-import { TextureButton } from '@/components/ui/texture-button';
 import { RollingNumber } from '@/components/ui/rolling-number';
 import { HaloSegmented } from '@/components/ui/halo-segmented';
 import { HaloSwitch } from '@/components/ui/halo-switch';
@@ -10,9 +9,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { cn } from '@/lib/utils';
 import { useVisible } from '@/lib/visible';
 import { GROUPS, ICONS, PRESET_SWATCHES, type Icon, type Look, type Variant } from '@/lib/bridle';
-import { GITHUB, SHOW_VARIANTS, TOTAL, Svg, LiveSvg, byName, fmt, pick } from '@/lib/icon';
+import { SHOW_VARIANTS, TOTAL, Svg, LiveSvg, byName, fmt, pick } from '@/lib/icon';
 
-const INSTALL = 'npm i github:mercurial-systems/bridle';
 
 // a colour icon on a soft white tile: the hero, collections and closing panel all use it
 function Chip({ icon, size, animated, className }: { icon: Icon; size: number; animated?: boolean; className?: string }) {
@@ -24,18 +22,32 @@ function Chip({ icon, size, animated, className }: { icon: Icon; size: number; a
 }
 const rise = { initial: { opacity: 0, y: 28 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-80px' }, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } };
 
-/* ---------------------------------------------------------------- hero: floating icon tiles with pointer parallax */
-// [icon, left %, top %, size px, depth (parallax px), float seconds, hide on small screens]
-const FLOATERS: [string, number, number, number, number, number, boolean][] = [
-  ['vault', 5, 14, 132, 36, 5.2, false], ['credit-card', 2, 40, 80, 18, 6.1, true], ['crypto-wallet', 4, 60, 116, 28, 4.6, true],
-  ['rocket', 22, 9, 76, 12, 5.6, true], ['coins', 14, 78, 86, 14, 6.4, false], ['block', 29, 84, 64, 8, 5.0, true],
-  ['bank', 83, 10, 128, 34, 5.4, false], ['nft', 91, 36, 76, 16, 6.2, true], ['shield-check', 86, 56, 112, 26, 4.8, true],
-  ['chart-bar', 69, 8, 72, 10, 5.8, true], ['token', 78, 80, 88, 15, 6.0, false], ['sparkles', 63, 85, 62, 8, 5.1, true],
+/* ---------------------------------------------------------------- hero: wordmark + scattered icons you can poke */
+// [icon, left %, top %, size px, colour, rotation deg, parallax px, hide on small screens]
+const SCATTER: [string, number, number, number, string, number, number, boolean][] = [
+  ['key', 9, 12, 44, '#5b8def', -12, 14, false], ['token', 4, 34, 40, '#f2777a', 8, 22, true], ['credit-card', 15, 40, 46, '#3cc47c', -6, 10, true],
+  ['vault', 5, 66, 58, '#a070f0', 6, 26, false], ['candles', 17, 78, 50, '#f4a52e', -10, 16, true], ['invoice', 28, 84, 46, '#f2777a', 8, 8, true],
+  ['swap', 36, 10, 40, '#ef6fb0', 14, 8, true], ['bell', 70, 8, 44, '#f4a52e', 12, 10, false], ['link', 89, 22, 52, '#ef6fb0', -14, 24, true],
+  ['crypto-wallet', 95, 10, 44, '#a070f0', 6, 18, true], ['book', 90, 48, 48, '#f4a52e', 8, 20, true], ['rocket', 82, 70, 60, '#5b8def', 14, 28, false],
+  ['bank', 70, 84, 50, '#3cc47c', -8, 12, true], ['chart-bar', 96, 76, 46, '#22b8cf', -6, 16, true], ['shield-check', 56, 88, 42, '#a070f0', 10, 8, true],
+  ['coins', 44, 82, 44, '#22b8cf', -8, 10, false],
 ];
+const AI_PROMPT = 'Use Bridle icons in this project. Read https://bridle.verity.dev/llms.txt for the install steps, the API and every icon name, then pick the icons that fit.';
 
-function Hero({ go }: { go: (p: string) => void }) {
+function Poke({ icon, size, color, onOpen }: { icon: Icon; size: number; color: string; onOpen: (i: Icon) => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button onClick={() => onOpen(icon)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} aria-label={icon.name} title={icon.name}
+      className="block transition-transform duration-300 ease-[cubic-bezier(.34,1.56,.64,1)] hover:scale-125 active:scale-95" style={{ color }}>
+      <LiveSvg icon={icon} look={{ variant: 'duo', strokeWidth: 2 }} hover={hover} size={size} />
+    </button>
+  );
+}
+
+export function Hero({ go, onOpen }: { go: (p: string) => void; onOpen: (i: Icon) => void }) {
   const ref = useRef<HTMLElement>(null);
   const visible = useVisible(ref);
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -51,46 +63,36 @@ function Hero({ go }: { go: (p: string) => void }) {
     el.addEventListener('pointermove', move);
     return () => { el.removeEventListener('pointermove', move); cancelAnimationFrame(raf); };
   }, []);
+  const copyPrompt = () => navigator.clipboard?.writeText(AI_PROMPT).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); });
   return (
-    <section ref={ref} className={cn('relative overflow-hidden border-b', !visible && 'paused')}>
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-[8%] size-[520px] rounded-full bg-[#c9b8ff] opacity-40 blur-[110px]" />
-        <div className="absolute top-10 right-[6%] size-[460px] rounded-full bg-[#b9f3d0] opacity-45 blur-[110px]" />
-        <div className="absolute -bottom-52 left-[38%] size-[520px] rounded-full bg-[#ffd3b4] opacity-40 blur-[120px]" />
-        <div className="dots absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_75%)]" />
-      </div>
-      <div aria-hidden className="absolute inset-0">
-        {FLOATERS.map(([n, x, y, size, depth, dur, hideSm], i) => byName[n] && (
+    <section ref={ref} className={cn('relative overflow-hidden', !visible && 'paused')}>
+      <div aria-hidden className="dots pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_20%,transparent_72%)]" />
+      <div className="absolute inset-0">
+        {SCATTER.map(([n, x, y, size, color, rot, depth, hideSm], i) => byName[n] && (
           <div key={n} className={cn('absolute transition-transform duration-500 ease-out will-change-transform', hideSm && 'hidden md:block')}
             style={{ left: `${x}%`, top: `${y}%`, transform: `translate3d(calc(var(--mx, 0) * ${-depth}px), calc(var(--my, 0) * ${-depth}px), 0)` }}>
-            <motion.div initial={{ opacity: 0, scale: 0.6, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.07, type: 'spring', bounce: 0.4, duration: 0.9 }}>
-              <div className="max-md:origin-top-left max-md:scale-[.45] max-md:opacity-70"><div className="hero-float" style={{ animationDuration: `${dur}s`, animationDelay: `${-i * 0.7}s` }}>
-                <Chip icon={byName[n]} size={size} className="rotate-[-4deg]" />
-              </div></div>
+            <motion.div initial={{ opacity: 0, scale: 0.3, rotate: rot - 30 }} animate={{ opacity: 1, scale: 1, rotate: rot }} transition={{ delay: 0.15 + i * 0.045, type: 'spring', bounce: 0.55, duration: 0.9 }}>
+              <div className="hero-float max-md:scale-75" style={{ animationDuration: `${5 + (i % 4) * 0.6}s`, animationDelay: `${-i * 0.6}s` }}>
+                <Poke icon={byName[n]} size={size} color={color} onOpen={onOpen} />
+              </div>
             </motion.div>
           </div>
         ))}
       </div>
-      <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
-        <motion.a href={GITHUB} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-full border bg-white/70 py-1 pr-3 pl-1 text-sm text-ink/70 shadow-sm backdrop-blur hover:text-ink">
-          <span className="rounded-full bg-lime px-2 py-0.5 text-xs font-semibold text-ink">New</span>
-          {fmt(TOTAL)} icons, all hand-drawn. Free and MIT <ArrowUpRight className="size-3.5" />
-        </motion.a>
-        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-7 text-[52px] leading-[0.98] font-semibold tracking-[-0.03em] sm:text-7xl lg:text-[104px]">
-          Icons that make <span className="spectrum">money look good.</span>
+      <div className="pointer-events-none relative mx-auto flex min-h-[min(68svh,640px)] max-w-5xl flex-col items-center justify-center px-4 pt-10 pb-14 text-center">
+        <motion.h1 initial={{ opacity: 0, y: 30, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="relative text-[27vw] leading-[0.82] font-bold tracking-[-0.06em] sm:text-[190px] lg:text-[230px]">
+          bridle
+          <span className="hero-spin absolute -top-[14%] -right-[13%] text-[#7c5cff] max-sm:-right-[6%]"><Svg icon={byName['sparkles']} look={{ variant: 'solid' }} size={64} className="max-sm:scale-50" /></span>
         </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }} className="mt-7 max-w-2xl text-lg text-ink/65 sm:text-xl">
-          One drawing becomes line, solid and colour, still or in motion. Built for SaaS, finance and crypto products.
+        <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }} className="mt-7 text-lg text-ink/55 sm:text-[22px]">
+          {fmt(TOTAL)} icons in 5 styles. Every one of them moves. Poke one.
         </motion.p>
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.6 }} className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <button onClick={() => go('/icons')} className="group inline-flex items-center gap-2 rounded-2xl border border-lime-deep/30 bg-lime px-6 py-3.5 text-base font-semibold text-ink shadow-[inset_0_-3px_0_rgba(0,0,0,.08),0_10px_30px_-10px_rgba(79,154,23,.6)] transition hover:-translate-y-0.5 hover:brightness-95">
-            Explore {fmt(TOTAL)} icons <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.6 }} className="pointer-events-auto mt-7 flex flex-wrap items-center justify-center gap-2.5">
+          <button onClick={copyPrompt} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-[15px] font-medium text-white transition hover:-translate-y-0.5 hover:bg-ink/90">
+            <span className="text-[#a78bfa]">✳</span> {copied ? 'Prompt copied. Paste it to your agent' : 'Use with your AI agent'}
           </button>
-          <div className="w-52"><TextureButton variant="minimal" onClick={() => (location.href = '/bridle-svg.zip')}><Download className="mr-2 size-4" />Download all SVGs</TextureButton></div>
-        </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 flex items-center gap-1 rounded-xl border bg-white/70 py-1 pr-1 pl-4 font-mono text-[13px] text-ink/70 backdrop-blur">
-          <span className="text-lime-deep">$</span>&nbsp;{INSTALL} <CopyButton value={INSTALL} />
+          <button onClick={() => go('/why')} className="inline-flex items-center gap-1.5 rounded-full bg-tile px-5 py-3 text-[15px] font-medium text-ink/75 transition hover:text-ink">Why Bridle <ArrowRight className="size-4" /></button>
         </motion.div>
       </div>
     </section>
@@ -104,7 +106,7 @@ function Marquee({ onOpen }: { onOpen: (i: Icon) => void }) {
   // a deterministic spread across every category
   const rows = useMemo(() => [0, 1, 2].map((r) => Array.from({ length: 22 }, (_, k) => ICONS[(r * 1109 + k * 151 + 37) % ICONS.length])), []);
   return (
-    <div ref={ref} className={cn('marquee-wrap space-y-3 overflow-hidden py-14 [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]', !visible && 'paused')}>
+    <div ref={ref} className={cn('marquee-wrap space-y-3 overflow-hidden pt-16 pb-6 [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]', !visible && 'paused')}>
       {rows.map((row, r) => (
         <div key={r} className={cn('marquee flex w-max gap-3', r === 1 && 'marquee-rev')} style={{ animationDuration: `${70 + r * 14}s` }}>
           {[...row, ...row].map((icon, k) => (
@@ -132,11 +134,11 @@ function Playground() {
   // until someone touches a control, tour the four styles
   useEffect(() => {
     if (touched || !visible) return;
-    const order: Variant[] = ['line', 'solid', 'color'];
-    const t = setInterval(() => setLook((l) => ({ ...l, variant: order[(order.indexOf(l.variant) + 1) % 3] })), 2200);
+    const order: Variant[] = ['line', 'duo', 'solid', 'duotone', 'color'];
+    const t = setInterval(() => setLook((l) => ({ ...l, variant: order[(order.indexOf(l.variant) + 1) % 5] })), 2200);
     return () => clearInterval(t);
   }, [touched, visible]);
-  const mono = look.variant === 'line' || look.variant === 'solid';
+  const mono = look.variant !== 'color';
   const pal = !mono && look.palette !== 'spectrum' ? ` palette="${look.palette}"` : '';
   const code = `<BridleIcon name="${icon.name}" variant="${look.variant}"${look.animated ? ' animated' : ''}${pal} />`;
   return (
@@ -222,8 +224,8 @@ function Bento() {
           <Cell className="md:col-span-2">
             <p className="text-6xl font-semibold tracking-tight tabular-nums"><RollingNumber value={TOTAL} /></p>
             <p className="mt-1 text-ink/60">unique drawings. No filler, no badge copies.</p>
-            <p className="mt-6 text-4xl font-semibold tracking-tight tabular-nums text-ink/35"><RollingNumber value={TOTAL * 6} /></p>
-            <p className="mt-1 text-ink/60">ready-made SVGs across 6 styles.</p>
+            <p className="mt-6 text-4xl font-semibold tracking-tight tabular-nums text-ink/35"><RollingNumber value={TOTAL * 10} /></p>
+            <p className="mt-1 text-ink/60">ready-made SVGs across 10 styles.</p>
           </Cell>
           <Cell className="bg-ink text-white md:col-span-2">
             <p className="text-2xl font-semibold">Crypto-native</p>
@@ -295,11 +297,11 @@ function Closing({ go }: { go: (p: string) => void }) {
   );
 }
 
-export default function Home({ go, onOpen, usage }: { go: (p: string) => void; onOpen: (i: Icon) => void; usage: ReactNode }) {
+export function Why({ go, usage }: { go: (p: string) => void; usage: ReactNode }) {
+  const noop = () => go('/icons');
   return (
     <main>
-      <Hero go={go} />
-      <Marquee onOpen={onOpen} />
+      <Marquee onOpen={noop} />
       <Playground />
       <Bento />
       <Collections go={go} />

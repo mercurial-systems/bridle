@@ -8,13 +8,12 @@ export type { Icon, Variant };
 export type Style = { variant: Variant; animated: boolean };
 export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number };
 
-export const STYLE_LIST: { id: string; label: string; variant: Variant; animated: boolean }[] = [
-  { id: 'line', label: 'Line', variant: 'line', animated: false },
-  { id: 'line-animated', label: 'Line · motion', variant: 'line', animated: true },
-  { id: 'solid', label: 'Solid', variant: 'solid', animated: false },
-  { id: 'solid-animated', label: 'Solid · motion', variant: 'solid', animated: true },
-  { id: 'color', label: 'Colour', variant: 'color', animated: false },
-  { id: 'color-animated', label: 'Colour · motion', variant: 'color', animated: true },
+export const STYLE_LIST: { id: Variant; label: string; hint: string }[] = [
+  { id: 'line', label: 'Line', hint: 'Bold 2 px strokes' },
+  { id: 'duo', label: 'Duo', hint: 'Bodies toned back' },
+  { id: 'solid', label: 'Solid', hint: 'Filled, details cut out' },
+  { id: 'duotone', label: 'Duotone', hint: 'Tinted bodies, solid accents' },
+  { id: 'color', label: 'Colour', hint: 'Gradient palettes' },
 ];
 export const styleId = (s: Style) => (s.animated ? `${s.variant}-animated` : s.variant);
 

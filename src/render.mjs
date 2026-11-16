@@ -1,4 +1,4 @@
-// Bridle renderer: one icon definition -> line | solid | color SVG, static or animated.
+// Bridle renderer: one icon definition -> line | duo | solid | duotone | color SVG, static or animated.
 // Pure string output, no DOM, no dependencies: runs in Node (build), browsers (site) and React.
 
 // name: [keyframes, timing, transform-origin]
@@ -189,13 +189,14 @@ function onBody(icon) {
       const b = tfBox(box(e), tf);
       if (!b) continue;
       const closed = !(e.t === 'path' && !/z\s*$/i.test(e.d));
-      if ((e.r === 'b' || e.r === 'a') && closed) shapes.push(b);
+      if ((e.r === 'b' || e.r === 'a') && closed) shapes.push([b, e.r]);
       else if (e.r === 'd' || e.r === 'f') details.push([e, b]);
     }
   };
   walk(icon.els, null);
   const within = (a, b) => a[0] >= b[0] - 0.6 && a[1] >= b[1] - 0.6 && a[2] <= b[2] + 0.6 && a[3] <= b[3] + 0.6;
-  for (const [e, b] of details) m.set(e, shapes.some((sb) => within(b, sb)));
+  // value: role of the topmost shape the detail sits on ('a' or 'b'), or false when it stands alone
+  for (const [e, b] of details) m.set(e, (shapes.filter(([sb]) => within(b, sb)).pop() || [0, false])[1]);
   ON_BODY.set(icon, m);
   return m;
 }
@@ -208,7 +209,7 @@ const ROUND = { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
  */
 export function renderSvg(icon, opt = {}) {
   const variant = VARIANTS.includes(opt.variant) ? opt.variant : 'line';
-  const sw = opt.strokeWidth ?? 1.5;
+  const sw = opt.strokeWidth ?? 2;
   const uid = opt.uid || `bri-${icon.name}-${(++counter).toString(36)}`;
   const ctx = { anim: !!opt.animated, used: new Set(), sw };
   const size = opt.size ?? 24;
@@ -216,9 +217,11 @@ export function renderSvg(icon, opt = {}) {
   const head = (vb, extra = {}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${size}"${attrs(extra)} role="img">${title}`;
   const isShape = (r) => r === 'b' || r === 'a';
 
-  if (variant === 'line') {
+  if (variant === 'line' || variant === 'duo') {
     // later shapes knock a gap out of earlier strokes they overlap, unless they sit wholly inside them
-    const paint = (r) => (r === 'h' ? null : r === 'f' ? { fill: 'currentColor', stroke: 'none' } : {});
+    // duo: bodies drop back to a soft tone so accents and details carry the icon
+    const soft = variant === 'duo' ? { opacity: '.36' } : {};
+    const paint = (r) => (r === 'h' ? null : r === 'f' ? { fill: 'currentColor', stroke: 'none' } : r === 'b' ? soft : {});
     const units = icon.els, boxes = units.map(box);
     let body = '', defs = '';
     units.forEach((u, i) => {
@@ -233,6 +236,20 @@ export function renderSvg(icon, opt = {}) {
       body += `<g mask="url(#${id})">${inner}</g>`;
     });
     if (defs) body = `<defs>${defs}</defs>` + body;
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
+  }
+
+  if (variant === 'duotone') {
+    // soft tinted bodies, solid accents, ink details: mask-free. Details on a solid accent use --bri-knockout.
+    const ko = 'var(--bri-knockout, #fff)';
+    const ob = onBody(icon);
+    const body = draw(icon.els, (r, e) => {
+      if (r === 'b') return { fill: 'currentColor', stroke: 'currentColor', opacity: '.22' };
+      if (r === 'a') return { fill: 'currentColor', stroke: 'currentColor' };
+      if (r === 'd' || r === 'A') return { fill: 'none', stroke: ob.get(e) === 'a' ? ko : 'currentColor' };
+      if (r === 'f') return { fill: ob.get(e) === 'a' ? ko : 'currentColor', stroke: 'none' };
+      return null;
+    }, ctx);
     return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
   }
 
@@ -284,4 +301,4 @@ export function renderSvg(icon, opt = {}) {
 
 }
 
-export const VARIANTS = ['line', 'solid', 'color'];
+export const VARIANTS = ['line', 'duo', 'solid', 'duotone', 'color'];

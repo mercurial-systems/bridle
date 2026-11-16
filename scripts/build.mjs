@@ -1,5 +1,5 @@
 // Build every distributable from the one icon source:
-//   site/public/svg/<style>/<name>.svg  (6 styles), sprites, icons.json, bridle.js (web component), bridle-svg.zip
+//   site/public/svg/<style>/<name>.svg  (10 styles, 6 hosted), sprites, icons.json, bridle.js (web component), bridle-svg.zip
 //   src/names.d.ts                      (IconName union for TypeScript users)
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -10,20 +10,24 @@ import { ICONS, CATEGORIES, GROUPS, renderSvg } from '../src/index.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const pub = path.join(root, 'site/public');
-const STYLES = ['line', 'solid', 'color'].flatMap((v) => [[v, false], [v, true]]);
+const STYLES = ['line', 'duo', 'solid', 'duotone', 'color'].flatMap((v) => [[v, false], [v, true]]);
+// Cloudflare Pages takes at most 20,000 files per deploy, so six folders are hosted; the zip has all ten.
+const hosted = ([v, a]) => !a || v === 'color';
+const stage = path.join(root, '.zipstage');
 const dir = (v, a) => (a ? `${v}-animated` : v);
 
-// Cloudflare Pages takes at most 20,000 files per deploy: icons x 6 styles must stay under it.
 rmSync(path.join(pub, 'svg'), { recursive: true, force: true });
+rmSync(stage, { recursive: true, force: true });
+mkdirSync(path.join(stage, 'svg'), { recursive: true });
 for (const [v, a] of STYLES) {
-  const base = path.join(pub, 'svg', dir(v, a));
+  const base = path.join(hosted([v, a]) ? pub : stage, 'svg', dir(v, a));
   mkdirSync(base, { recursive: true });
   for (const i of ICONS) writeFileSync(path.join(base, `${i.name}.svg`), renderSvg(i, { variant: v, animated: a, uid: `bri-${i.name}` }) + '\n');
 }
 // sprites: <svg><use href="bridle-line.svg#wallet"/></svg>
 for (const v of ['line', 'solid']) {
   const syms = ICONS.map((i) => renderSvg(i, { variant: v, uid: `bri-${i.name}`, title: false })
-    .replace(/^<svg[^>]*?viewBox="([^"]+)"[^>]*>/, (_, vb) => `<symbol id="${i.name}" viewBox="${vb}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">`)
+    .replace(/^<svg[^>]*?viewBox="([^"]+)"[^>]*>/, (_, vb) => `<symbol id="${i.name}" viewBox="${vb}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`)
     .replace(/<\/svg>$/, '</symbol>'));
   writeFileSync(path.join(pub, `bridle-${v}.svg`), `<svg xmlns="http://www.w3.org/2000/svg">${syms.join('')}</svg>\n`);
 }
@@ -39,5 +43,35 @@ require('esbuild').buildSync({ entryPoints: [path.join(root, 'src/element.mjs')]
 // one zip with every SVG, sprite and the manifest
 const zip = path.join(pub, 'bridle-svg.zip');
 rmSync(zip, { force: true });
-execFileSync('python3', ['-m', 'zipfile', '-c', zip, 'svg', 'bridle-line.svg', 'bridle-solid.svg', 'icons.json'], { cwd: pub });
+execFileSync('bash', ['-c', `cp -r svg/. "${stage}/svg/" && cp bridle-line.svg bridle-solid.svg icons.json "${stage}/"`], { cwd: pub });
+execFileSync('python3', ['-m', 'zipfile', '-c', zip, 'svg', 'bridle-line.svg', 'bridle-solid.svg', 'icons.json'], { cwd: stage });
+rmSync(stage, { recursive: true, force: true });
+
+// llms.txt: everything an AI coding agent needs to use Bridle correctly
+writeFileSync(path.join(pub, 'llms.txt'), `# Bridle icons
+
+${ICONS.length} original MIT-licensed icons for SaaS, finance and crypto. Site: https://bridle.verity.dev
+
+## Styles
+line (default), duo (bodies toned back), solid, duotone (tinted bodies, solid accents), color. Every style can animate.
+Mono styles inherit currentColor. Default stroke is 2 on a 24 px grid.
+
+## React
+npm i github:mercurial-systems/bridle
+import { BridleIcon } from 'bridle-icons/react';
+<BridleIcon name="wallet" variant="duo" size={24} />
+<BridleIcon name="rocket" variant="color" animated palette="ocean" />
+Props: name, variant, animated, size, strokeWidth, palette (spectrum|sunset|ocean|mint|grape|lava|gold|ice|hue 0-360), title.
+
+## Web component
+<script type="module" src="https://bridle.verity.dev/bridle.js"></script>
+<bridle-icon name="bank" variant="duotone"></bridle-icon>
+
+## Static files
+https://bridle.verity.dev/svg/{line|duo|solid|duotone|color|color-animated}/{name}.svg
+Sprites: /bridle-line.svg#name, /bridle-solid.svg#name. Manifest with tags: /icons.json
+
+## Names
+${GROUPS.map((g) => g.cats.map((c) => `### ${g.label} / ${c.short}\n${c.icons.map((i) => i.name).join(' ')}`).join('\n\n')).join('\n\n')}
+`);
 console.log(`bridle: ${ICONS.length} icons x ${STYLES.length} styles = ${ICONS.length * STYLES.length} SVGs`);
