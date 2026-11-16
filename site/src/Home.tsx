@@ -62,7 +62,7 @@ function Hero({ go }: { go: (p: string) => void }) {
           </div>
         ))}
       </div>
-      <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-24 text-center sm:px-6">
+      <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
         <motion.a href={GITHUB} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-full border bg-white/70 py-1 pr-3 pl-1 text-sm text-ink/70 shadow-sm backdrop-blur hover:text-ink">
           <span className="rounded-full bg-lime px-2 py-0.5 text-xs font-semibold text-ink">New</span>
           {fmt(TOTAL)} icons, all hand-drawn. Free and MIT <ArrowUpRight className="size-3.5" />
