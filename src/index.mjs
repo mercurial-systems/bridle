@@ -67,6 +67,14 @@ const drawnByName = Object.fromEntries(drawn.map((i) => [i.name, i]));
 // generated status variants join their base's category, right after the drawn icons
 for (const v of families(drawnByName)) CATEGORIES.find((c) => c.id === v.cat).icons.push(v);
 export const ICONS = CATEGORIES.flatMap((c) => c.icons);
+
+// Four top-level groups; each category lives in exactly one, with a short label for use inside its group.
+export const GROUPS = [
+  { id: 'crypto', label: 'Crypto', cats: [['crypto', 'Essentials'], ['defi', 'DeFi'], ['trading', 'Trading'], ['chain', 'Infrastructure'], ['gaming', 'NFTs & Gaming']] },
+  { id: 'finance', label: 'Finance', cats: [['finance', 'Money'], ['banking', 'Banking'], ['cards', 'Cards'], ['payments', 'Payments'], ['markets', 'Markets & Accounting'], ['wealth', 'Wealth & Insurance']] },
+  { id: 'business', label: 'Business', cats: [['business', 'Operations'], ['commerce', 'Commerce & Logistics'], ['corporate', 'Corporate'], ['people', 'People & HR'], ['marketing', 'Marketing'], ['support', 'Support'], ['legal', 'Legal'], ['property', 'Property'], ['travel', 'Travel'], ['esg', 'Sustainability']] },
+  { id: 'product', label: 'Product & Tech', cats: [['saas', 'SaaS'], ['interface', 'Interface'], ['productivity', 'Productivity'], ['ai', 'AI'], ['communication', 'Communication'], ['devices', 'Devices & Dev'], ['data', 'Files & Security'], ['location', 'Maps']] },
+].map((g) => ({ ...g, cats: g.cats.map(([id, short]) => ({ ...CATEGORIES.find((c) => c.id === id), short })) }));
 export const byName = Object.fromEntries(ICONS.map((i) => [i.name, i]));
 
 /** svg('wallet', { variant: 'color', animated: true, size: 32 }) */

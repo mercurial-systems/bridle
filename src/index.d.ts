@@ -17,6 +17,7 @@ export interface RenderOptions {
 export interface Icon { name: IconName; tags: string[]; cat: string; els: unknown[] }
 export const ICONS: Icon[];
 export const CATEGORIES: { id: string; label: string; icons: Icon[] }[];
+export const GROUPS: { id: string; label: string; cats: { id: string; label: string; short: string; icons: Icon[] }[] }[];
 export const byName: Record<IconName, Icon>;
 export function svg(name: IconName, opt?: RenderOptions): string;
 export function renderSvg(icon: Icon, opt?: RenderOptions): string;

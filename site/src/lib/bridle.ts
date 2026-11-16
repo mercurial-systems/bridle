@@ -1,7 +1,8 @@
-import { ICONS, CATEGORIES as ALL_CATEGORIES, renderSvg, type Icon, type RenderOptions, type Variant } from 'bridle';
+import { ICONS, GROUPS, CATEGORIES as ALL_CATEGORIES, renderSvg, type Icon, type RenderOptions, type Variant } from 'bridle';
 
 export const CATEGORIES = ALL_CATEGORIES.filter((c) => c.icons.length);
-export { ICONS };
+export { ICONS, GROUPS };
+export const groupOf = (cat: string) => GROUPS.find((g) => g.cats.some((c) => c.id === cat))!;
 export type { Icon, Variant };
 
 export type Style = { variant: Variant; animated: boolean };

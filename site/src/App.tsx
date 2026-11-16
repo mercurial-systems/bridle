@@ -12,7 +12,7 @@ import { CodeBlock } from '@/components/ui/code-block';
 import { DirectionAwareTabs } from '@/components/ui/direction-aware-tabs';
 import { cn } from '@/lib/utils';
 import { useVisible } from '@/lib/visible';
-import { CATEGORIES, ICONS, PRESET_SWATCHES, STYLE_LIST, download, downloadPng, fileSvg, hexToHue, match, styleId, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
+import { CATEGORIES, GROUPS, groupOf, ICONS, PRESET_SWATCHES, STYLE_LIST, download, downloadPng, fileSvg, hexToHue, match, styleId, svgFor, type Icon, type Look, type Variant } from '@/lib/bridle';
 
 const GITHUB = 'https://github.com/mercurial-systems/bridle';
 const SITE = 'https://bridle.verity.dev';
@@ -192,7 +192,7 @@ function Home({ go }: { go: (p: string) => void }) {
               <div className="w-48"><TextureButton variant="minimal" onClick={() => (location.href = '/bridle-svg.zip')}><Download className="mr-2 size-4" />All SVGs (.zip)</TextureButton></div>
             </div>
             <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4">
-              {[[TOTAL, 'icons'], [8, 'styles'], [CATEGORIES.length, 'categories'], [TOTAL * 8, 'SVG files']].map(([n, l]) => (
+              {[[TOTAL, 'icons'], [8, 'styles'], [GROUPS.length, 'collections'], [TOTAL * 8, 'SVG files']].map(([n, l]) => (
                 <div key={l}><dt className="text-3xl font-semibold tabular-nums"><RollingNumber value={n as number} /></dt><dd className="text-sm text-ink/55">{l}</dd></div>
               ))}
             </dl>
@@ -210,13 +210,19 @@ function Home({ go }: { go: (p: string) => void }) {
         <div className="mx-auto max-w-[1400px] px-4 py-20 sm:px-6">
           <TextAnimate text="Built for every product." type="rollIn" className="m-0 p-0 pb-0 text-center text-4xl font-semibold tracking-tight text-ink sm:text-5xl dark:text-ink" />
           <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-ink/60">From dashboards and invoices to validators, perps and prediction markets. {fmt(NEW)} new icons in this release.</p>
-          <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {CATEGORIES.map((c) => (
-              <button key={c.id} onClick={() => go(`/icons?c=${c.id}`)} className="group flex items-center gap-3 rounded-xl border bg-white p-3 text-left hover:border-ink/20">
-                <Svg icon={c.icons[0]} look={{ variant: 'color' }} size={28} />
-                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{c.label}</span><span className="text-xs text-ink/50">{fmt(c.icons.length)} icons</span></span>
-                <ArrowRight className="size-4 text-ink/30 transition group-hover:translate-x-0.5 group-hover:text-ink" />
-              </button>
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {GROUPS.map((g) => (
+              <div key={g.id} className="rounded-2xl border bg-white p-6">
+                <button onClick={() => go(`/icons?g=${g.id}`)} className="group flex w-full items-start justify-between text-left">
+                  <span><span className="block text-2xl font-semibold">{g.label}</span><span className="text-sm text-ink/50">{fmt(g.cats.reduce((n, c) => n + c.icons.length, 0))} icons</span></span>
+                  <span className="flex -space-x-1">{g.cats.slice(0, 4).map((c) => <Svg key={c.id} icon={c.icons[0]} look={{ variant: 'color' }} size={30} className="rounded-lg bg-white p-1 ring-1 ring-border" />)}</span>
+                </button>
+                <div className="mt-5 flex flex-wrap gap-1.5">
+                  {g.cats.map((c) => (
+                    <button key={c.id} onClick={() => go(`/icons?g=${g.id}&c=${c.id}`)} className="rounded-full bg-band px-3 py-1 text-sm text-ink/70 hover:bg-tile hover:text-ink">{c.short}</button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -242,27 +248,35 @@ const PAGE = 160;
 function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => void; onOpen: (i: Icon) => void }) {
   const params = new URLSearchParams(location.search);
   const [q, setQ] = useState(params.get('q') || '');
-  const [cat, setCat] = useState(params.get('c') || 'all');
+  const [group, setGroup] = useState(() => { const g = params.get('g') || (params.get('c') && groupOf(params.get('c')!)?.id); return GROUPS.some((x) => x.id === g) ? g! : 'all'; });
+  const [cat, setCat] = useState<string | null>(() => (CATEGORIES.some((c) => c.id === params.get('c')) ? params.get('c') : null));
+  const pickGroup = (g: string) => { setGroup(g); setCat(null); };
+  const activeGroup = GROUPS.find((g) => g.id === group);
   const [limit, setLimit] = useState(PAGE);
   const [custom, setCustom] = useState('#22c55e');
   const armed = useRef(false); // the colour picker reports its colour on mount; only react once touched
   const dq = useDeferredValue(q);
-  const list = useMemo(() => ICONS.filter((i) => (cat === 'all' || i.cat === cat) && match(i, dq)), [cat, dq]);
+  const list = useMemo(() => {
+    const ids = cat ? new Set([cat]) : activeGroup ? new Set(activeGroup.cats.map((c) => c.id)) : null;
+    return ICONS.filter((i) => (!ids || ids.has(i.cat)) && match(i, dq));
+  }, [cat, activeGroup, dq]);
   const shown = list.slice(0, limit);
   const sentinel = useRef<HTMLDivElement>(null);
   const more = useVisible(sentinel);
   useEffect(() => { if (more && limit < list.length) startTransition(() => setLimit((l) => l + PAGE)); }, [more, limit, list.length]);
-  useEffect(() => setLimit(PAGE), [cat, dq, look.variant]);
+  useEffect(() => setLimit(PAGE), [group, cat, dq, look.variant]);
   useEffect(() => {
     const u = new URL(location.href);
-    if (cat === 'all') u.searchParams.delete('c'); else u.searchParams.set('c', cat);
+    if (group === 'all') u.searchParams.delete('g'); else u.searchParams.set('g', group);
+    if (!cat) u.searchParams.delete('c'); else u.searchParams.set('c', cat);
     if (dq) u.searchParams.set('q', dq); else u.searchParams.delete('q');
     history.replaceState(null, '', u);
-  }, [cat, dq]);
+  }, [group, cat, dq]);
   const mono = look.variant === 'line' || look.variant === 'solid';
   const iso = look.variant === 'iso';
   const set = (p: Partial<Look>) => setLook({ ...look, ...p });
-  const catLabel = cat === 'all' ? 'All icons' : CATEGORIES.find((c) => c.id === cat)?.label;
+  const sub = activeGroup?.cats.find((c) => c.id === cat);
+  const catLabel = activeGroup ? (sub ? <>{activeGroup.label} <span className="text-ink/35">/ {sub.short}</span></> : activeGroup.label) : 'All icons';
 
   return (
     <main>
@@ -300,19 +314,43 @@ function Library({ look, setLook, onOpen }: { look: Look; setLook: (l: Look) => 
 
       <div className="mx-auto flex max-w-[1400px] gap-8 px-4 py-8 sm:px-6">
         <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] w-60 shrink-0 overflow-y-auto pr-2 lg:block">
-          <p className="mb-2 text-sm font-semibold">Categories</p>
-          {[{ id: 'all', label: 'All icons', n: TOTAL }, ...CATEGORIES.map((c) => ({ id: c.id, label: c.label, n: c.icons.length }))].map((c) => (
-            <button key={c.id} onClick={() => setCat(c.id)} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-[14px]', cat === c.id ? 'bg-tile font-medium' : 'text-ink/70 hover:bg-band')}>
-              <span className="truncate">{c.label}</span><span className="text-xs text-ink/45 tabular-nums">{fmt(c.n)}</span>
-            </button>
-          ))}
+          <p className="mb-2 text-sm font-semibold">Collections</p>
+          <button onClick={() => pickGroup('all')} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-[15px]', group === 'all' ? 'bg-tile font-medium' : 'text-ink/70 hover:bg-band')}>
+            <span>All icons</span><span className="text-xs text-ink/45 tabular-nums">{fmt(TOTAL)}</span>
+          </button>
+          {GROUPS.map((g) => {
+            const open = g.id === group;
+            return (
+              <div key={g.id} className="mt-0.5">
+                <button onClick={() => pickGroup(g.id)} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-[15px]', open && !cat ? 'bg-tile font-medium' : open ? 'font-medium' : 'text-ink/70 hover:bg-band')}>
+                  <span>{g.label}</span><span className="text-xs text-ink/45 tabular-nums">{fmt(g.cats.reduce((n, c) => n + c.icons.length, 0))}</span>
+                </button>
+                {open && (
+                  <div className="mt-0.5 ml-3 border-l pl-2">
+                    {g.cats.map((c) => (
+                      <button key={c.id} onClick={() => setCat(c.id === cat ? null : c.id)} className={cn('flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-[13.5px]', cat === c.id ? 'bg-tile font-medium text-ink' : 'text-ink/60 hover:bg-band hover:text-ink')}>
+                        <span className="truncate">{c.short}</span><span className="text-[11px] text-ink/40 tabular-nums">{fmt(c.icons.length)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </aside>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] lg:hidden">
-            {[{ id: 'all', label: 'All' }, ...CATEGORIES].map((c) => (
-              <button key={c.id} onClick={() => setCat(c.id)} className={cn('shrink-0 rounded-full border px-3 py-1 text-sm', cat === c.id ? 'border-ink bg-ink text-white' : 'bg-white')}>{c.label}</button>
+            {[{ id: 'all', label: 'All' }, ...GROUPS].map((g) => (
+              <button key={g.id} onClick={() => pickGroup(g.id)} className={cn('shrink-0 rounded-full border px-3.5 py-1 text-sm', group === g.id ? 'border-ink bg-ink text-white' : 'bg-white')}>{g.label}</button>
             ))}
           </div>
+          {activeGroup && (
+            <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] lg:hidden">
+              {activeGroup.cats.map((c) => (
+                <button key={c.id} onClick={() => setCat(c.id === cat ? null : c.id)} className={cn('shrink-0 rounded-full px-3 py-0.5 text-[13px]', cat === c.id ? 'bg-lime font-medium' : 'bg-band text-ink/65')}>{c.short}</button>
+              ))}
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-2xl font-semibold">{catLabel}</h2>
             <p className="text-sm text-ink/50">{fmt(list.length)} icons{dq && ` for “${dq}”`}</p>
@@ -348,7 +386,7 @@ function Detail({ icon, look, onClose, setLook }: { icon: Icon; look: Look; onCl
         className="h-full w-full max-w-xl overflow-y-auto border-l bg-white p-5 shadow-2xl sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium tracking-wide text-ink/45 uppercase">{CATEGORIES.find((c) => c.id === icon.cat)?.label}</p>
+            <p className="text-xs font-medium tracking-wide text-ink/45 uppercase">{groupOf(icon.cat).label} · {groupOf(icon.cat).cats.find((c) => c.id === icon.cat)?.short}</p>
             <h3 className="mt-1 font-mono text-2xl font-semibold">{icon.name}</h3>
             <div className="mt-2 flex flex-wrap gap-1.5">{icon.tags.slice(0, 10).map((t) => <span key={t} className="rounded-md bg-tile px-2 py-0.5 text-xs text-ink/60">{t}</span>)}</div>
           </div>
