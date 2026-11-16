@@ -61,7 +61,7 @@ npm i github:mercurial-systems/bridle
 import { BridleIcon } from 'bridle-icons/react';
 <BridleIcon name="wallet" variant="duo" size={24} />
 <BridleIcon name="rocket" variant="color" animated palette="ocean" />
-Props: name, variant, animated, size, strokeWidth, palette (spectrum|sunset|ocean|mint|grape|lava|gold|ice|hue 0-360), title.
+Props: name, variant, animated, size, strokeWidth, corner (round|square), palette (spectrum|sunset|ocean|mint|grape|lava|gold|ice|hue 0-360), title.
 
 ## Web component
 <script type="module" src="https://bridle.verity.dev/bridle.js"></script>

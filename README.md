@@ -60,7 +60,7 @@ el.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });
 
 Duotone and animated solid paint details that sit on a solid shape with the CSS variable `--bri-knockout` (default `#fff`): set it to your background.
 
-Options: `variant` (`line` `duo` `solid` `duotone` `color`), `animated`, `size`, `strokeWidth`, `title`, and `palette`:
+Options: `variant` (`line` `duo` `solid` `duotone` `color`), `animated`, `size`, `strokeWidth`, `corner` (`round` `square`), `title`, and `palette`:
 a preset (`spectrum` `sunset` `ocean` `mint` `grape` `lava` `gold` `ice`), a hue `0–360`, a `[hue, accentHue]` pair or a full palette object.
 
 ## How it works

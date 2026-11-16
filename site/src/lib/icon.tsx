@@ -22,7 +22,7 @@ export function Svg({ icon, look, size, className }: { icon: Icon; look: Partial
 // Without Motion, an icon animates only while hovered.
 const cache = new Map<string, string>();
 function cachedSvg(icon: Icon, look: Partial<Look>, size: number) {
-  const key = `${icon.name}|${look.variant}|${look.animated ? 1 : 0}|${look.palette}|${look.strokeWidth}|${size}`;
+  const key = `${icon.name}|${look.variant}|${look.animated ? 1 : 0}|${look.palette}|${look.strokeWidth}|${look.corner}|${size}`;
   let s = cache.get(key);
   if (!s) {
     s = svgFor(icon, look, size, `c${cache.size.toString(36)}`);

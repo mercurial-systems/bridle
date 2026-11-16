@@ -205,11 +205,12 @@ let counter = 0;
 const ROUND = { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
 
 /**
- * renderSvg(icon, { variant: 'line'|'solid'|'color', animated, palette, strokeWidth, size, uid, title })
+ * renderSvg(icon, { variant, animated, palette, strokeWidth, corner: 'round'|'square', size, uid, title })
  */
 export function renderSvg(icon, opt = {}) {
   const variant = VARIANTS.includes(opt.variant) ? opt.variant : 'line';
   const sw = opt.strokeWidth ?? 2;
+  const cap = opt.corner === 'square' ? { 'stroke-linecap': 'butt', 'stroke-linejoin': 'miter' } : ROUND;
   const uid = opt.uid || `bri-${icon.name}-${(++counter).toString(36)}`;
   const ctx = { anim: !!opt.animated, used: new Set(), sw };
   const size = opt.size ?? 24;
@@ -232,11 +233,11 @@ export function renderSvg(icon, opt = {}) {
       const id = `${uid}k${i}`;
       const still = { ...ctx, anim: false, sw: sw + 2.2 }; // knock-outs stay static: animated mask content repaints every frame
       const knock = cut.map((j) => draw([units[j]], (r) => ((r === 'b' || r === 'a') ? { fill: '#000', stroke: '#000' } : null), still)).join('');
-      defs += `<mask id="${id}" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><rect x="-2" y="-2" width="28" height="28" fill="#fff" stroke="none"/><g stroke-width="${sw + 2.2}"${attrs(ROUND)}>${knock}</g></mask>`;
+      defs += `<mask id="${id}" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><rect x="-2" y="-2" width="28" height="28" fill="#fff" stroke="none"/><g stroke-width="${sw + 2.2}"${attrs(cap)}>${knock}</g></mask>`;
       body += `<g mask="url(#${id})">${inner}</g>`;
     });
     if (defs) body = `<defs>${defs}</defs>` + body;
-    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...cap }) + styleBlock(ctx.used) + body + '</svg>';
   }
 
   if (variant === 'duotone') {
@@ -250,7 +251,7 @@ export function renderSvg(icon, opt = {}) {
       if (r === 'f') return { fill: ob.get(e) === 'a' ? ko : 'currentColor', stroke: 'none' };
       return null;
     }, ctx);
-    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...cap }) + styleBlock(ctx.used) + body + '</svg>';
   }
 
   if (variant === 'solid' && ctx.anim) {
@@ -265,7 +266,7 @@ export function renderSvg(icon, opt = {}) {
       if (r === 'f') return { fill: ob.get(e) ? ko : 'currentColor', stroke: 'none' };
       return null;
     }, ctx);
-    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + body + '</svg>';
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...cap }) + styleBlock(ctx.used) + body + '</svg>';
   }
 
   if (variant === 'solid') {
@@ -273,8 +274,8 @@ export function renderSvg(icon, opt = {}) {
     const sil = draw(icon.els, (r) => (r === 'b' ? { fill: '#fff', stroke: '#fff' } : r === 'a' ? { fill: '#fff', stroke: '#000' } : r === 'x' ? { fill: 'none' } : { fill: r === 'f' ? '#000' : 'none', stroke: r === 'f' ? 'none' : '#000' }), ctx);
     const inv = draw(icon.els, (r) => (isShape(r) ? { fill: '#000', stroke: '#000' } : r === 'x' ? { fill: 'none' } : null), ctx);
     const lone = draw(icon.els, (r) => (r === 'd' || r === 'A' ? { fill: 'none' } : r === 'f' ? { fill: 'currentColor', stroke: 'none' } : r === 'x' ? { fill: 'none', stroke: 'none' } : null), ctx);
-    const g = { 'stroke-width': sw, ...ROUND };
-    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) +
+    const g = { 'stroke-width': sw, ...cap };
+    return head('0 0 24 24', { fill: 'none', stroke: 'currentColor', 'stroke-width': sw, ...cap }) + styleBlock(ctx.used) +
       `<defs><mask id="${uid}m" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><g${attrs(g)}>${sil}</g></mask>` +
       `<mask id="${uid}n" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><rect x="-2" y="-2" width="28" height="28" fill="#fff"/><g${attrs(g)}>${inv}</g></mask></defs>` +
       `<rect x="-2" y="-2" width="28" height="28" fill="currentColor" stroke="none" mask="url(#${uid}m)"/><g mask="url(#${uid}n)">${lone}</g></svg>`;
@@ -296,7 +297,7 @@ export function renderSvg(icon, opt = {}) {
     const shapes = draw(icon.els, (r) => (r === 'b' ? { fill: `url(#${uid}g)`, stroke: p.s } : r === 'a' ? { fill: `url(#${uid}a)`, stroke: p.as } : null), ctx);
     const shine = draw(icon.els, (r) => (r === 'h' ? { fill: 'none', stroke: '#fff', 'stroke-opacity': '.9' } : null), ctx);
     const body = shapes + split(p.d, p.s) + draw(icon.els, (r) => (r === 'A' ? { fill: 'none', stroke: p.as } : null), ctx) + shine;
-    return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...ROUND }) + styleBlock(ctx.used) + defs + body + '</svg>';
+    return head('0 0 24 24', { fill: 'none', 'stroke-width': sw, ...cap }) + styleBlock(ctx.used) + defs + body + '</svg>';
   }
 
 }

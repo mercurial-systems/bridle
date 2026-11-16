@@ -4,7 +4,7 @@ import { renderSvg } from './render.mjs';
 
 let n = 0;
 class BridleIconElement extends HTMLElement {
-  static observedAttributes = ['name', 'variant', 'animated', 'size', 'hue', 'palette', 'stroke'];
+  static observedAttributes = ['name', 'variant', 'animated', 'size', 'hue', 'palette', 'stroke', 'corner'];
   connectedCallback() { this.render(); }
   attributeChangedCallback() { if (this.isConnected) this.render(); }
   render() {
@@ -20,6 +20,7 @@ class BridleIconElement extends HTMLElement {
       size: size ? +size : undefined,
       palette: hue != null ? +hue : this.getAttribute('palette') || undefined,
       strokeWidth: this.hasAttribute('stroke') ? +this.getAttribute('stroke') : undefined,
+      corner: this.getAttribute('corner') || undefined,
       uid: `bri-el-${(n++).toString(36)}`,
     });
   }

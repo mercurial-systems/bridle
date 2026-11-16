@@ -6,7 +6,7 @@ export const groupOf = (cat: string) => GROUPS.find((g) => g.cats.some((c) => c.
 export type { Icon, Variant };
 
 export type Style = { variant: Variant; animated: boolean };
-export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number };
+export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number; corner?: 'round' | 'square' };
 
 export const STYLE_LIST: { id: Variant; label: string; hint: string }[] = [
   { id: 'line', label: 'Line', hint: 'Bold 2 px strokes' },

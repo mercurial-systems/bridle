@@ -8,6 +8,8 @@ export interface RenderOptions {
   /** category colours (default), a preset name, a hue (0-360), a [hue, accentHue] pair or a full palette */
   palette?: 'spectrum' | 'sunset' | 'ocean' | 'mint' | 'grape' | 'lava' | 'gold' | 'ice' | number | [number, number] | Palette;
   strokeWidth?: number;
+  /** stroke ends and joins: round (default) or square */
+  corner?: 'round' | 'square';
   size?: number;
   title?: string | false;
   uid?: string;
