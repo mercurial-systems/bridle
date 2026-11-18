@@ -443,7 +443,7 @@ export default class App extends Component<object, S> {
             {this.docs().map((s, i) => (
               <div key={s.n} className="rule" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 10, paddingTop: 22 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
-                  <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1 }}><span className="lab mute" style={{ marginRight: 12, letterSpacing: 0 }}>{s.n}</span>{s.title}</h2>
+                  <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1 }}>{s.title}</h2>
                   <button onClick={() => this.copy(s.code, 'd' + i)} className="pill sm">{copied('d' + i, 'Copy')}</button>
                 </div>
                 <p className="body">{s.note}</p>
@@ -451,7 +451,7 @@ export default class App extends Component<object, S> {
               </div>
             ))}
             <div className="rule" style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 22 }}>
-              <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1, marginBottom: 8 }}><span className="lab mute" style={{ marginRight: 12, letterSpacing: 0 }}>06</span>Props</h2>
+              <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1, marginBottom: 8 }}>Props</h2>
               {[['name', 'glyph name, required', ''], ['variant', STYLE_LIST.map((s) => `"${s.id}"`).join(' | '), 'line'], ['strokeWidth', 'number, 1 to 2.5', '2'], ['corner', '"round" | "square"', 'round'], ['size', 'number, in px', '24'], ['palette', 'preset, hue or [hue, accent]', 'by collection'], ['animated', 'boolean', 'false'], ['title', 'string | false', 'glyph name']].map(([name, type, def]) => (
                 <div key={name} style={{ display: 'grid', gridTemplateColumns: 'minmax(64px,.6fr) minmax(0,1.7fr) minmax(64px,.7fr)', gap: 12, padding: '11px 0', borderTop: '1px solid color-mix(in srgb,var(--ink) 18%,transparent)', font: '400 13px/1.4 var(--mono)' }}>
                   <span style={{ fontWeight: 500 }}>{name}</span><span className="mute">{type}</span><span>{def}</span>
@@ -460,7 +460,7 @@ export default class App extends Component<object, S> {
             </div>
             <div className="rule" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 10, paddingTop: 22 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
-                <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1 }}><span className="lab mute" style={{ marginRight: 12, letterSpacing: 0 }}>07</span>Hand it to your agent</h2>
+                <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1 }}>Hand it to your agent</h2>
                 <button onClick={() => this.copy(AI_PROMPT, 'ai')} className="pill sm">{copied('ai', 'Copy')}</button>
               </div>
               <p className="body">Paste this into your coding agent. The file it points to lists the whole API and every glyph name.</p>
