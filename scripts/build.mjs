@@ -27,7 +27,7 @@ for (const [v, a] of STYLES) {
 // sprites: <svg><use href="bridle-line.svg#wallet"/></svg>
 for (const v of ['line', 'solid']) {
   const syms = ICONS.map((i) => renderSvg(i, { variant: v, uid: `bri-${i.name}`, title: false })
-    .replace(/^<svg[^>]*?viewBox="([^"]+)"[^>]*>/, (_, vb) => `<symbol id="${i.name}" viewBox="${vb}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`)
+    .replace(/^<svg[^>]*?viewBox="([^"]+)"[^>]*>/, (_, vb) => `<symbol id="${i.name}" viewBox="${vb}" fill="none" stroke="currentColor" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round">`)
     .replace(/<\/svg>$/, '</symbol>'));
   writeFileSync(path.join(pub, `bridle-${v}.svg`), `<svg xmlns="http://www.w3.org/2000/svg">${syms.join('')}</svg>\n`);
 }
@@ -61,7 +61,7 @@ npm i github:mercurial-systems/bridle
 import { BridleIcon } from 'bridle-icons/react';
 <BridleIcon name="wallet" variant="duo" size={24} />
 <BridleIcon name="rocket" variant="color" animated palette="ocean" />
-Props: name, variant, animated, size, strokeWidth, corner (round|square), palette (spectrum|sunset|ocean|mint|grape|lava|gold|ice|hue 0-360), title.
+Props: name, variant, animated, size, strokeWidth (default 1.12, keep at or under 1.4), corner (round|square), palette (spectrum|sunset|ocean|mint|grape|lava|gold|ice|hue 0-360), title.
 
 ## Web component
 <script type="module" src="https://bridle.verity.dev/bridle.js"></script>

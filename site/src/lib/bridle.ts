@@ -9,7 +9,7 @@ export type Style = { variant: Variant; animated: boolean };
 export type Look = Style & { palette: RenderOptions['palette']; strokeWidth: number; corner?: 'round' | 'square' };
 
 export const STYLE_LIST: { id: Variant; label: string; hint: string }[] = [
-  { id: 'line', label: 'Line', hint: 'Bold 2 px strokes' },
+  { id: 'line', label: 'Line', hint: '1.12 px strokes' },
   { id: 'duo', label: 'Duo', hint: 'Bodies toned back' },
   { id: 'solid', label: 'Solid', hint: 'Filled, details cut out' },
   { id: 'duotone', label: 'Duotone', hint: 'Tinted bodies, solid accents' },

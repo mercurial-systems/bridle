@@ -7,6 +7,7 @@ export interface RenderOptions {
   animated?: boolean;
   /** category colours (default), a preset name, a hue (0-360), a [hue, accentHue] pair or a full palette */
   palette?: 'spectrum' | 'sunset' | 'ocean' | 'mint' | 'grape' | 'lava' | 'gold' | 'ice' | number | [number, number] | Palette;
+  /** default 1.12; the set is drawn to look right up to 1.4 */
   strokeWidth?: number;
   /** stroke ends and joins: round (default) or square */
   corner?: 'round' | 'square';

@@ -5,7 +5,7 @@ Next-gen open icons for SaaS, business, finance, banking, payments and crypto.
 
 | style | file folder | notes |
 | --- | --- | --- |
-| Line | `line` | bold 2 px stroke, round caps, inherits `currentColor` |
+| Line | `line` | 1.12 px stroke, round caps, inherits `currentColor` |
 | Duo | `duo` | line with bodies toned back so accents and details lead |
 | Solid | `solid` | filled silhouettes with knocked-out details, `currentColor` |
 | Duotone | `duotone` | tinted bodies, solid accents, ink details, `currentColor` |
@@ -55,7 +55,7 @@ import { BridleIcon } from 'bridle-icons/react';
 
 ```js
 import { svg } from 'bridle-icons';
-el.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 2 });
+el.innerHTML = svg('invoice', { variant: 'solid', strokeWidth: 1.4 });
 ```
 
 Duotone and animated solid paint details that sit on a solid shape with the CSS variable `--bri-knockout` (default `#fff`): set it to your background.

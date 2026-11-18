@@ -310,7 +310,7 @@ export default class App extends Component<object, S> {
   attrs(kind: 'react' | 'html') {
     const st = this.state, a: string[] = [], r = kind === 'react';
     if (st.cut !== 'line') a.push(`variant="${st.cut}"`);
-    a.push(r ? `strokeWidth={${this.sw()}}` : `stroke="${this.sw()}"`);
+    if (this.sw() !== 1.12) a.push(r ? `strokeWidth={${this.sw()}}` : `stroke="${this.sw()}"`);
     if (st.corner !== 'round') a.push(`corner="square"`);
     if (st.cut === 'color' && PALS[st.pal]) a.push(`palette="${PALS[st.pal]}"`);
     if (st.cut !== 'color' && st.color !== 'ink') a.push(r ? `style={{ color: '${this.col()}' }}` : `style="color:${this.col()}"`);
@@ -454,7 +454,7 @@ export default class App extends Component<object, S> {
             ))}
             <div className="rule" style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 22 }}>
               <h2 className="disp" style={{ fontSize: 30, lineHeight: 1.1, marginBottom: 8 }}>Props</h2>
-              {[['name', 'glyph name, required', ''], ['variant', STYLE_LIST.map((s) => `"${s.id}"`).join(' | '), 'line'], ['strokeWidth', 'number, 1 to 2.5', '2'], ['corner', '"round" | "square"', 'round'], ['size', 'number, in px', '24'], ['palette', 'preset, hue or [hue, accent]', 'by collection'], ['animated', 'boolean', 'false'], ['title', 'string | false', 'glyph name']].map(([name, type, def]) => (
+              {[['name', 'glyph name, required', ''], ['variant', STYLE_LIST.map((s) => `"${s.id}"`).join(' | '), 'line'], ['strokeWidth', 'number, up to 1.4', '1.12'], ['corner', '"round" | "square"', 'round'], ['size', 'number, in px', '24'], ['palette', 'preset, hue or [hue, accent]', 'by collection'], ['animated', 'boolean', 'false'], ['title', 'string | false', 'glyph name']].map(([name, type, def]) => (
                 <div key={name} style={{ display: 'grid', gridTemplateColumns: 'minmax(64px,.6fr) minmax(0,1.7fr) minmax(64px,.7fr)', gap: 12, padding: '11px 0', borderTop: '1px solid color-mix(in srgb,var(--ink) 18%,transparent)', font: '400 13px/1.4 var(--mono)' }}>
                   <span style={{ fontWeight: 500 }}>{name}</span><span className="mute">{type}</span><span>{def}</span>
                 </div>

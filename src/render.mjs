@@ -209,7 +209,7 @@ const ROUND = { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
  */
 export function renderSvg(icon, opt = {}) {
   const variant = VARIANTS.includes(opt.variant) ? opt.variant : 'line';
-  const sw = opt.strokeWidth ?? 2;
+  const sw = opt.strokeWidth ?? 1.12; // house weight; the site never draws above 1.4
   const cap = opt.corner === 'square' ? { 'stroke-linecap': 'butt', 'stroke-linejoin': 'miter' } : ROUND;
   const uid = opt.uid || `bri-${icon.name}-${(++counter).toString(36)}`;
   const ctx = { anim: !!opt.animated, used: new Set(), sw };
