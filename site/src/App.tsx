@@ -75,10 +75,12 @@ export default class App extends Component<object, S> {
 
   /* ---- look ---- */
   col() { return INKS[this.state.color]; }
+  // the dock reads 1 to 2.5, but the stroke actually drawn tops out at 1.4 (founder: nothing bolder than that)
+  sw() { return +(this.state.weight * (1.4 / 2.5)).toFixed(2); }
   styleKey() { const s = this.state; return `${s.cut}|${s.weight}|${s.corner}|${s.cut === 'color' ? s.pal : s.color}`; }
   look(): Partial<Look> {
     const s = this.state, key = this.styleKey() + s.motion;
-    if (key !== this._lookKey) { this._lookKey = key; this._look = { variant: s.cut, strokeWidth: s.weight, corner: s.corner, palette: PALS[s.pal], animated: s.motion }; }
+    if (key !== this._lookKey) { this._lookKey = key; this._look = { variant: s.cut, strokeWidth: this.sw(), corner: s.corner, palette: PALS[s.pal], animated: s.motion }; }
     return this._look;
   }
   svg(k: number, px: number, animated = false, uid = `f${k}`) {
@@ -308,7 +310,7 @@ export default class App extends Component<object, S> {
   attrs(kind: 'react' | 'html') {
     const st = this.state, a: string[] = [], r = kind === 'react';
     if (st.cut !== 'line') a.push(`variant="${st.cut}"`);
-    if (st.weight !== 2) a.push(r ? `strokeWidth={${st.weight}}` : `stroke="${st.weight}"`);
+    a.push(r ? `strokeWidth={${this.sw()}}` : `stroke="${this.sw()}"`);
     if (st.corner !== 'round') a.push(`corner="square"`);
     if (st.cut === 'color' && PALS[st.pal]) a.push(`palette="${PALS[st.pal]}"`);
     if (st.cut !== 'color' && st.color !== 'ink') a.push(r ? `style={{ color: '${this.col()}' }}` : `style="color:${this.col()}"`);
@@ -318,10 +320,10 @@ export default class App extends Component<object, S> {
   docs() {
     const st = this.state, house = `variant="${st.cut}"`, sc = '<' + 'script', se = '<' + '/script>';
     const steps: Record<string, string[]> = {
-      react: ['npm i github:mercurial-systems/bridle', `import { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="${EX}" />`, `const Icon = (props) => (\n  <BridleIcon ${house} strokeWidth={${st.weight}} corner="${st.corner}" {...props} />\n);\n\n<Icon name="${EX}" />`, `<BridleIcon name="${EX}" animated />`, `<BridleIcon name="${EX}" title="Open wallet" />`],
-      html: [`${sc} type="module" src="${SITE}/bridle.js">${se}`, `<bridle-icon name="${EX}"></bridle-icon>`, `<bridle-icon name="${EX}" ${house} stroke="${st.weight}" corner="${st.corner}"></bridle-icon>`, `<bridle-icon name="${EX}" animated></bridle-icon>`, `<button aria-label="Open wallet">\n  <bridle-icon name="${EX}"></bridle-icon>\n</button>`],
+      react: ['npm i github:mercurial-systems/bridle', `import { BridleIcon } from 'bridle-icons/react';\n\n<BridleIcon name="${EX}" />`, `const Icon = (props) => (\n  <BridleIcon ${house} strokeWidth={${this.sw()}} corner="${st.corner}" {...props} />\n);\n\n<Icon name="${EX}" />`, `<BridleIcon name="${EX}" animated />`, `<BridleIcon name="${EX}" title="Open wallet" />`],
+      html: [`${sc} type="module" src="${SITE}/bridle.js">${se}`, `<bridle-icon name="${EX}"></bridle-icon>`, `<bridle-icon name="${EX}" ${house} stroke="${this.sw()}" corner="${st.corner}"></bridle-icon>`, `<bridle-icon name="${EX}" animated></bridle-icon>`, `<button aria-label="Open wallet">\n  <bridle-icon name="${EX}"></bridle-icon>\n</button>`],
       files: [`${SITE}/bridle-svg.zip`, `<img src="${SITE}/svg/line/${EX}.svg" width="24" alt="" />`, `<img src="${SITE}/svg/${st.cut}/${EX}.svg" width="24" alt="" />`, `<img src="${SITE}/svg/color-animated/${EX}.svg" width="48" alt="" />`, `<img src="${SITE}/svg/line/${EX}.svg" width="24" alt="Open wallet" />`],
-      js: ['npm i github:mercurial-systems/bridle', `import { svg } from 'bridle-icons';\n\nel.innerHTML = svg('${EX}');`, `const house = { variant: '${st.cut}', strokeWidth: ${st.weight}, corner: '${st.corner}' };\n\nel.innerHTML = svg('${EX}', house);`, `svg('${EX}', { animated: true });`, `svg('${EX}', { title: 'Open wallet' });`],
+      js: ['npm i github:mercurial-systems/bridle', `import { svg } from 'bridle-icons';\n\nel.innerHTML = svg('${EX}');`, `const house = { variant: '${st.cut}', strokeWidth: ${this.sw()}, corner: '${st.corner}' };\n\nel.innerHTML = svg('${EX}', house);`, `svg('${EX}', { animated: true });`, `svg('${EX}', { title: 'Open wallet' });`],
     };
     const meta = [
       ['Install', st.fw === 'html' ? 'One script tag, no build step.' : st.fw === 'files' ? 'Every glyph in every cut, as plain files. Or link them straight from this site.' : 'One package with no dependencies. The renderer draws each glyph on demand.'],
